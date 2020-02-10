@@ -1,0 +1,65 @@
+/* action-button-text-labels-desktop-only.css */
+
+@media (min-width: 960px) {
+
+  .fa-download::after {
+    content: "  Download ";
+    white-space: pre;
+    font-size: 1.125rem;
+    font-family: "Helvetica Neue",Arial,Helvetica,Verdana,sans-serif;
+    font-weight: bold;
+  }
+
+  .fa-print::after {
+    content: "  Print ";
+    white-space: pre;
+    font-size: 1.125rem;
+    font-family: "Helvetica Neue",Arial,Helvetica,Verdana,sans-serif;
+    font-weight: bold;
+  }
+
+}
+
+.btn-primary .fa-expand::after {
+  content: "  View ";
+  white-space: pre;
+  font-size: 1.125rem;
+  font-family: "Helvetica Neue",Arial,Helvetica,Verdana,sans-serif;
+  font-weight: bold;
+}
+
+/* horizontal-menu.css */
+@media screen and (min-width: 768px) {
+
+	.Header-logoImage {
+		margin-top: 10px !important;
+		height: 80px;
+		width: auto;
+	}
+
+	.Header-controls {
+		width: 100%;
+		position: static;
+	}
+
+	.Header-hamburgerHolder {
+		float: left;
+	}
+
+	.Header-hamburgerHolder .btn-group button {
+		display: none;
+	}
+
+	.Header-headerMenuLinks {
+		position: static;
+		display: flex;
+		flex-wrap: nowrap;
+		border: none;
+		box-shadow: none;
+	}
+
+	.Header-headerMenuLinks h3 {
+		margin: 5px;
+	}
+
+}
