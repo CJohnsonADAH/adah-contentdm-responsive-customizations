@@ -56,8 +56,27 @@
 		flex-wrap: nowrap;
 		border: none;
 		box-shadow: none;
+		
+		/* CWJ */
+		background: transparent !important;
 	}
 
+	/* CWJ */
+	.Header-headerMenuLinks a {
+		background: transparent !important;
+		color: #FFFFFF !important;
+	}
+	.Header-headerMenuLinks li > a:hover {
+		background: rgb(32, 84, 109) !important;
+		color: #FFFFFF !important;
+	}
+	.Header-headerMenuLinks a h3 {
+		color: inherit;
+	}
+	.Header-headerMenuLinks a .fa-external-link {
+		display: none;
+	}
+	
 	.Header-headerMenuLinks h3 {
 		margin: 5px;
 	}
