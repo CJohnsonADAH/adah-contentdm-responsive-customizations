@@ -172,3 +172,284 @@
 1.0 - 2018 June - initial implementation
 
 */
+
+/* ia-book-reader-embed-1_2.js */
+(function() {
+  'use strict';
+
+  let currentInstance = null;
+
+  function IABookReader(url) {
+    return new Promise(function(resolve) {
+      if (!url) {
+        return resolve(false);
+      }
+      // create iframe for ia book reader
+      let html = '<div class="videoWrapper"><iframe src="' + url + '?ui=embed#page/n1/mode/2up" width="100%" height="600px"></iframe></div>';
+      resolve(html);
+    });
+  }
+
+  var APIS = {
+    'www.archive.org': IABookReader,
+	'archive.org': IABookReader
+  };
+
+  function loadFrame(link) {
+    return Promise.resolve(link).then(function(link) {
+      const url = new URL(link);
+      // find proper api from api list
+      const loader = APIS[url.hostname];
+      return loader && loader(link);
+    }).catch(console.warn);
+  }
+
+  function CustomVideoView(container) {
+    if (!container) {
+      return false;
+    }
+    const anchor = container.querySelector('a');
+    if (!anchor || !/archive.org/i.test(anchor.href)) {
+      return false;
+    }
+
+    const links = [anchor.href];
+    // parse metadata
+    const rows = document.querySelectorAll('tr[class*=metadatarow]');
+    Array.from(rows).forEach(function(row) {
+      // find a description field
+      if (row.firstChild.textContent === 'Description') {
+        links = links.concat(row.lastChild.textContent.split(','));
+      }
+    });
+
+    // create container for iFrames
+    const frameContainer = document.createElement('div');
+    frameContainer.style.width = '100%';
+
+    const mount = function() {
+      const reqs = links.map(function(link) {
+        return loadFrame(link);
+      });
+
+      Promise.all(reqs).then(function(reps) {
+        // hide original viewer
+        container.className += ' hide';
+        // add each frames to one root
+        reps.forEach(function(embeddedHTML) {
+          embeddedHTML && (frameContainer.innerHTML += embeddedHTML);
+        });
+        // insert it
+        container.parentNode.insertBefore(frameContainer, container);
+      });
+
+    };
+
+    const unmount = function() {
+      frameContainer.parentNode && frameContainer.parentNode.removeChild(frameContainer);
+    };
+
+    mount();
+
+    return {unmount: unmount};
+
+  }
+
+  // set to true for global scripts or false for collection-constrained scripts
+  let globalScope = true;
+
+  // list all collection aliases that should trigger this script
+  let collectionScope = [
+    'p15700coll2'
+  ];
+
+  document.addEventListener('cdm-item-page:ready', function(e) {
+    if (globalScope || collectionScope.includes(e.detail.collectionId)) {
+      // unmount or remove current video player from DOM if it is exists
+      currentInstance && currentInstance.unmount();
+      // creates a new instance if it is url item and it is from vimeo.com
+      currentInstance = CustomVideoView(document.querySelector('div[class*=itemUrl]'));
+    }
+  });
+
+  document.addEventListener('cdm-item-page:update', function(e) {
+    if (globalScope || collectionScope.includes(e.detail.collectionId)) {
+      currentInstance && currentInstance.unmount();
+      // updates an instance if it is url item and it is from vimeo.com
+      currentInstance = CustomVideoView(document.querySelector('div[class*=itemUrl]'));
+    }
+  });
+
+  document.addEventListener('cdm-item-page:leave', function(e) {
+    if (globalScope || collectionScope.includes(e.detail.collectionId)) {
+      // unmount or remove current video player from DOM if it is exists
+      currentInstance && currentInstance.unmount();
+    }
+  });
+
+})();
+
+/* version history
+
+1.2 - 2020 Jan 15 - reworked width to fit entire preview panel
+1.1 - 2019 Aug - updated with global vs. collection toggle options
+1.0 - 2018 June - initial implementation
+
+*/
+
+/* Collection-level scripts */
+var adahCDMPageMenu = null;
+
+(function() {
+	function adahCDMPageMenuLoader(e) {
+		
+		if (adahCDMPageMenu==null) {
+			let head = document.getElementsByClassName('Header-header');
+			let menu = document.getElementsByClassName('Header-headerMenuLinks', head);
+			for (var i = 0; i < menu.length; i++) {
+				adahCDMPageMenu = {'*': menu[i].innerHTML};
+			} /* for */			
+		} /* if */
+		
+		var scope=(typeof(e.detail.collectionId)=='undefined'?'*':e.detail.collectionId);
+		if (typeof(adahCDMPageMenu[scope])=='undefined') {
+			let jsonurl = '';
+			jsonurl = window.location.origin + '/customizations/collection/'+scope+'/pages/links.html';
+			console.log("check for menu", jsonurl);
+			
+			var xhttp = new XMLHttpRequest;
+			xhttp.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					adahCDMPageMenu[this.responseURL] = this.responseText;
+				} else if (this.readyState == 4 && this.status >= 400) {
+					adahCDMPageMenu[this.responseURL] = '';
+				}
+				
+				var theHtml = adahCDMPageMenu['*'];
+				if (typeof(adahCDMPageMenu[this.responseURL]) != 'undefined') {
+					if (adahCDMPageMenu[this.responseURL].length > 0) {
+						theHtml = adahCDMPageMenu[this.responseURL];
+					}
+				}
+				
+				let head = document.getElementsByClassName('Header-header');
+				let menu = document.getElementsByClassName('Header-headerMenuLinks', head);
+				if (menu) {
+					for (var i = 0; i < menu.length; i++) {
+						if (menu[i].innerHTML != theHtml) {
+							menu[i].innerHTML = theHtml;
+						}
+					}
+				}
+
+			};
+			xhttp.open("GET", jsonurl, true);
+			xhttp.send();			
+		}
+	} /* adahCDMPageMenuLoader(e) */
+	
+	function adahCDMAdvancedSearchPageCollectionFilters(collectionId, expandList) {
+		console.log("adahCDMAdvancedSearchPageCollectionFilters", collectionId, expandList);
+		
+		let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
+		
+		let checked=0;
+		
+		for (var i = 0; i < filterList.length; i++) {
+			console.log("adahCDMAdvancedSearchPageCollectionFilters", "outer for", collectionId, expandList);
+
+			let filterListItems = filterList[i].getElementsByTagName('input');
+			for (var j = 0; j < filterListItems.length; j++) {
+				console.log("adahCDMAdvancedSearchPageCollectionFilters", "inner for", collectionId, expandList);
+				
+				let checkMe = false;
+				if (filterListItems[j].name != "selectAll") {
+					if (filterListItems[j].name == collectionId) {
+						console.log(filterListItems[j], "name:", filterListItems[j].name);
+						checkMe = true;
+					} /* if */
+				} /* if */
+				
+				/*console.log(filterListItems[j], checkMe);*/
+				filterListItems[j].checked=checkMe;
+				checked = checked + (checkMe ? 1 : 0);
+			} /* for */
+			
+			if (checked==0 && expandList) {
+				let seeMoreLessButtons = filterList[i].getElementsByClassName('btn-see-more-less');
+				for (var j = 0; j < seeMoreLessButtons.length; j++) {
+					console.log("Nada.", seeMoreLessButtons[j]);
+					seeMoreLessButtons[j].click();
+					
+					let cloneHTML = seeMoreLessButtons[j].outerHTML;
+					console.log("HTML:", cloneHTML);
+					
+					let parentNode = seeMoreLessButtons[j].parentNode;
+					let cloneDOM = seeMoreLessButtons[j].cloneNode(/*deep=*/ true);
+					
+					console.log("DOM:", cloneDOM);
+					
+					parentNode.insertBefore(cloneDOM, null); /*seeMoreLessButtons[j]);*/
+					
+					parentNode.removeChild(seeMoreLessButtons[j]);
+					
+
+				} /* for */
+			} /* if */
+		} /* for */
+		
+	} /* adahCDMAdvancedSearchPageCollectionFilters() */
+	
+	function adahCDMAdvancedSearchPage (e) {
+		let jsonurl = '';
+		jsonurl = window.location
+		console.log("advanced search: collection=", e.detail.collectionId, e.props, e, jsonurl);
+
+		if (typeof(e.detail.collectionId) != "undefined") {
+			let collectionId = e.detail.collectionId;
+
+			let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
+			for (var i = 0; i < filterList.length; i++) {
+				let seeMoreLessButtons = filterList[i].getElementsByClassName('btn-see-more-less');
+				for (var j = 0; j < seeMoreLessButtons.length; j++) {
+					seeMoreLessButtons[j].addEventListener('click', function (e) {
+						e.preventDefault();
+						adahCDMAdvancedSearchPageCollectionFilters(collectionId, false);
+					});
+				} /* for */
+			} /* for */
+
+			adahCDMAdvancedSearchPageCollectionFilters(collectionId, true);
+		} /* if */
+
+	} /* adahCDMAdvancedSearchPage() */
+	
+	let retrieveMenuObjects = [
+		'cdm-home-page',
+		'cdm-search-page',
+		'cdm-advanced-search-page',
+		'cdm-collection-page',
+		'cdm-collection-landing-page',
+		'cdm-collection-search-page',
+		'cdm-item-page',
+		'cdm-custom-page',
+		'cdm-about-page',
+		'cdm-notfound-page'
+	];
+	let retrieveMenuEvents = [
+		'ready',
+		'update'
+	];
+		
+	for (var i = 0; i < retrieveMenuObjects.length; i++) {
+		for (var j = 0; j < retrieveMenuEvents.length; j++) {
+			let retrieveMenuEvent = retrieveMenuObjects[i] + ':' + retrieveMenuEvents[j];
+			document.addEventListener(retrieveMenuEvent, adahCDMPageMenuLoader);
+		} /* for */
+	} /* for */
+	
+	document.addEventListener('cdm-advanced-search-page:ready', adahCDMAdvancedSearchPage)
+	document.addEventListener('cdm-advanced-search-page:update', adahCDMAdvancedSearchPage)
+	
+	document.addEventListener('cdm-app:ready', function (e) { console.log("CDM APP:", e); });
+})();
