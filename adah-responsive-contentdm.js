@@ -426,11 +426,12 @@ var adahCDMPageMenu = null;
 		}, 10 /*ms*/);
 	} /* adahCDMAdvancedSearchPageMaybeFilterChecklist () */
 	
-	function adahCDMAdvancedSearchPageButton_DoTo (callback) {
+	function adahCDMAdvancedSearchPageButton_DoTo (callback, identifier) {
+		let ident = (typeof(identifier)!='undefined' ? identifier : ".btn-see-more-less" );
 		if (typeof(callback)=="function") {
 			let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
 			for (var i = 0; i < filterList.length; i++) {
-				let seeMoreLessButtons = filterList[i].getElementsByClassName('btn-see-more-less');
+				let seeMoreLessButtons = filterList[i].querySelectorAll(ident);
 				for (var j = 0; j < seeMoreLessButtons.length; j++) {
 					callback(seeMoreLessButtons[j], j);
 				} /* for */
