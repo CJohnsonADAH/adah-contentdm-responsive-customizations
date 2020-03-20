@@ -420,6 +420,7 @@ var adahCDMPageMenu = null;
 				if (i > 0) {
 					adahCDMAdvancedSearchPageCollectionFilters(collectionId, false);
 					clearInterval(adahCDMAdvancedSearchPagePoll);
+					tockCount = 0;
 				} /* if */
 			} /* if */
 		}, 10 /*ms*/);
