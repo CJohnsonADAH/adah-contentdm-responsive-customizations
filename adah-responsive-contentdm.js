@@ -350,6 +350,8 @@ var adahCDMPageMenu = null;
 	} /* adahCDMPageMenuLoader(e) */
 	
 	function adahCDMAdvancedSearchPageCollectionFilters(collectionId, expandList) {
+		let nameToLabel = {};
+		
 		if (collectionId.length > 0) {
 			console.log("Advanced Search: Default to:", collectionId, expandList);
 			
@@ -361,6 +363,7 @@ var adahCDMPageMenu = null;
 
 				let filterListItems = filterList[i].getElementsByTagName('input');
 				for (var j = 0; j < filterListItems.length; j++) {
+					nameToLabel[filterListItems[j].name] = filterListItems[j].parentNode.innerText;
 					
 					let checkMe = false;
 					if (filterListItems[j].name == "selectAll") {
@@ -384,9 +387,14 @@ var adahCDMPageMenu = null;
 					adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
 						btn.click();
 					});
+				} else if (checked > 0) {
+					console.log("Checked:", nameToLabel, collectionId);
+					let span = document.getElementById('collections-h1-collection-id');
+					span.innerText = ': ' + nameToLabel[collectionId];
 				} /* if */
 				
-				adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) { console.log(j, btn); }, '[data-id="updateBtn"]');
+				// save the changes made to selections.
+				adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) { btn.click(); }, '[data-id="updateBtn"]');
 			} /* for */
 		} /* if */
 	} /* adahCDMAdvancedSearchPageCollectionFilters() */
@@ -439,11 +447,30 @@ var adahCDMPageMenu = null;
 	
 	function adahCDMAdvancedSearchPage (e) {
 		let jsonurl = '';
-		jsonurl = window.location
+		jsonurl = window.location;
 
 		if (typeof(e.detail.collectionId) != "undefined") {
 			let collectionId = e.detail.collectionId;
-
+			
+			let h1_Containers = document.querySelectorAll('.AdvancedSearch-content');
+			for (let i = 0; i < h1_Containers.length; i++) {
+				let h1s = h1_Containers[i].querySelectorAll('h1');
+				for (j = 0; j < h1s.length; j++) {
+					let h1 = h1s[j];
+					if (h1.innerText.trim().toUpperCase() == 'COLLECTIONS') {
+						var newSpan = document.createElement('span');
+						var newContent = document.createTextNode(":");
+						
+						newSpan.setAttribute("id", "collections-h1-collection-id");
+						newSpan.appendChild(newContent);
+						
+						h1.appendChild(newSpan);
+					} /* if */
+					
+					console.log("h1", h1.innerHTML);
+				} /* for */
+			} /* for */
+			
 			adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
 				btn.id = 'btn-see-more-less-' + j;
 				btn.addEventListener('click', function (e) { e.preventDefault(); adahCDMAdvancedSearchPageMaybeFilterChecklist(collectionId); });
