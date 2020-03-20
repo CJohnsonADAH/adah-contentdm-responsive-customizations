@@ -298,9 +298,11 @@
 */
 
 /* Collection-level scripts */
+
 var adahCDMPageMenu = null;
 
 (function() {
+	
 	function adahCDMPageMenuLoader(e) {
 		
 		if (adahCDMPageMenu==null) {
@@ -356,14 +358,16 @@ var adahCDMPageMenu = null;
 		let checked=0;
 		
 		for (var i = 0; i < filterList.length; i++) {
-			console.log("adahCDMAdvancedSearchPageCollectionFilters", "outer for", collectionId, expandList);
 
 			let filterListItems = filterList[i].getElementsByTagName('input');
 			for (var j = 0; j < filterListItems.length; j++) {
-				console.log("adahCDMAdvancedSearchPageCollectionFilters", "inner for", collectionId, expandList);
 				
 				let checkMe = false;
-				if (filterListItems[j].name != "selectAll") {
+				if (filterListItems[j].name == "selectAll") {
+					if (filterListItems[j].checked) {
+						filterListItems[j].click();
+					} /* if */
+				} else {
 					if (filterListItems[j].name == collectionId) {
 						console.log(filterListItems[j], "name:", filterListItems[j].name);
 						checkMe = true;
@@ -371,34 +375,59 @@ var adahCDMPageMenu = null;
 				} /* if */
 				
 				/*console.log(filterListItems[j], checkMe);*/
-				filterListItems[j].checked=checkMe;
+				if (filterListItems[j].name != "selectAll" && filterListItems[j].checked != checkMe) {
+					filterListItems[j].click();
+					console.log("FLIP STATE:", filterListItems[j].name, filterListItems[j].checked, checkMe); 
+				} /* if */
+
 				checked = checked + (checkMe ? 1 : 0);
 			} /* for */
 			
 			if (checked==0 && expandList) {
-				let seeMoreLessButtons = filterList[i].getElementsByClassName('btn-see-more-less');
-				for (var j = 0; j < seeMoreLessButtons.length; j++) {
-					console.log("Nada.", seeMoreLessButtons[j]);
-					seeMoreLessButtons[j].click();
-					
-					let cloneHTML = seeMoreLessButtons[j].outerHTML;
-					console.log("HTML:", cloneHTML);
-					
-					let parentNode = seeMoreLessButtons[j].parentNode;
-					let cloneDOM = seeMoreLessButtons[j].cloneNode(/*deep=*/ true);
-					
-					console.log("DOM:", cloneDOM);
-					
-					parentNode.insertBefore(cloneDOM, null); /*seeMoreLessButtons[j]);*/
-					
-					parentNode.removeChild(seeMoreLessButtons[j]);
-					
-
-				} /* for */
+				adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
+					console.log("No checkbox to check.");
+					btn.click();
+				});
 			} /* if */
 		} /* for */
 		
 	} /* adahCDMAdvancedSearchPageCollectionFilters() */
+	
+	var adahCDMAdvancedSearchPagePoll;
+	
+	function adahCDMAdvancedSearchPageMaybeFilterChecklist (collectionId) {
+		
+		adahCDMAdvancedSearchPagePoll = setInterval(function () {
+			let containers = document.getElementsByClassName('SearchCollectionFilter-container');
+			console.log("tock", containers);
+			if (containers.length > 0) {
+				var i=0;
+
+				for (i=0; i < containers.length; i++) {
+					if (typeof(containers[i].id) != "string" || containers[i].id != ("adah-cdm-filtered-"+i)) {
+						containers[i].id = ("adah-cdm-filtered-"+i);
+					} /* if */
+				} /* for */
+				
+				if (i > 0) {
+					adahCDMAdvancedSearchPageCollectionFilters(collectionId, false);
+					clearInterval(adahCDMAdvancedSearchPagePoll);
+				} /* if */
+			} /* if */
+		}, 10 /*ms*/);
+	} /* adahCDMAdvancedSearchPageMaybeFilterChecklist () */
+	
+	function adahCDMAdvancedSearchPageButton_DoTo (callback) {
+		if (typeof(callback)=="function") {
+			let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
+			for (var i = 0; i < filterList.length; i++) {
+				let seeMoreLessButtons = filterList[i].getElementsByClassName('btn-see-more-less');
+				for (var j = 0; j < seeMoreLessButtons.length; j++) {
+					callback(seeMoreLessButtons[j], j);
+				} /* for */
+			} /* for */
+		}
+	}
 	
 	function adahCDMAdvancedSearchPage (e) {
 		let jsonurl = '';
@@ -408,17 +437,11 @@ var adahCDMPageMenu = null;
 		if (typeof(e.detail.collectionId) != "undefined") {
 			let collectionId = e.detail.collectionId;
 
-			let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
-			for (var i = 0; i < filterList.length; i++) {
-				let seeMoreLessButtons = filterList[i].getElementsByClassName('btn-see-more-less');
-				for (var j = 0; j < seeMoreLessButtons.length; j++) {
-					seeMoreLessButtons[j].addEventListener('click', function (e) {
-						e.preventDefault();
-						adahCDMAdvancedSearchPageCollectionFilters(collectionId, false);
-					});
-				} /* for */
-			} /* for */
-
+			adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
+				btn.id = 'btn-see-more-less-' + j;
+				btn.addEventListener('click', function (e) { e.preventDefault(); adahCDMAdvancedSearchPageMaybeFilterChecklist(collectionId); });
+			});
+			
 			adahCDMAdvancedSearchPageCollectionFilters(collectionId, true);
 		} /* if */
 
@@ -452,4 +475,5 @@ var adahCDMPageMenu = null;
 	document.addEventListener('cdm-advanced-search-page:update', adahCDMAdvancedSearchPage)
 	
 	document.addEventListener('cdm-app:ready', function (e) { console.log("CDM APP:", e); });
+	
 })();
