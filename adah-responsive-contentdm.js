@@ -351,46 +351,46 @@ var adahCDMPageMenu = null;
 	} /* adahCDMPageMenuLoader(e) */
 	
 	function adahCDMAdvancedSearchPageCollectionFilters(collectionId, expandList) {
-		console.log("adahCDMAdvancedSearchPageCollectionFilters", collectionId, expandList);
-		
-		let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
-		
-		let checked=0;
-		
-		for (var i = 0; i < filterList.length; i++) {
+		if (collectionId.length > 0) {
+			console.log("Advanced Search: Default to:", collectionId, expandList);
+			
+			let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
+			
+			let checked=0;
+			
+			for (var i = 0; i < filterList.length; i++) {
 
-			let filterListItems = filterList[i].getElementsByTagName('input');
-			for (var j = 0; j < filterListItems.length; j++) {
-				
-				let checkMe = false;
-				if (filterListItems[j].name == "selectAll") {
-					if (filterListItems[j].checked) {
+				let filterListItems = filterList[i].getElementsByTagName('input');
+				for (var j = 0; j < filterListItems.length; j++) {
+					
+					let checkMe = false;
+					if (filterListItems[j].name == "selectAll") {
+						if (filterListItems[j].checked) {
+							filterListItems[j].click();
+						} /* if */
+					} else {
+						if (filterListItems[j].name == collectionId) {
+							checkMe = true;
+						} /* if */
+					} /* if */
+					
+					/*console.log(filterListItems[j], checkMe);*/
+					if (filterListItems[j].name != "selectAll" && filterListItems[j].checked != checkMe) {
 						filterListItems[j].click();
 					} /* if */
-				} else {
-					if (filterListItems[j].name == collectionId) {
-						console.log(filterListItems[j], "name:", filterListItems[j].name);
-						checkMe = true;
-					} /* if */
+
+					checked = checked + (checkMe ? 1 : 0);
+				} /* for */
+				
+				if (checked==0 && expandList) {
+					adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
+						btn.click();
+					});
 				} /* if */
 				
-				/*console.log(filterListItems[j], checkMe);*/
-				if (filterListItems[j].name != "selectAll" && filterListItems[j].checked != checkMe) {
-					filterListItems[j].click();
-					console.log("FLIP STATE:", filterListItems[j].name, filterListItems[j].checked, checkMe); 
-				} /* if */
-
-				checked = checked + (checkMe ? 1 : 0);
+				adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) { console.log(j, btn); }, '[data-id="updateBtn"]');
 			} /* for */
-			
-			if (checked==0 && expandList) {
-				adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
-					console.log("No checkbox to check.");
-					btn.click();
-				});
-			} /* if */
-		} /* for */
-		
+		} /* if */
 	} /* adahCDMAdvancedSearchPageCollectionFilters() */
 	
 	var adahCDMAdvancedSearchPagePoll;
