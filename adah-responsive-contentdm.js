@@ -355,7 +355,7 @@ var adahCDMPageMenu = null;
 		let span = document.getElementById('collections-h1-collection-id');
 		console.log("Advanced Search: state=", span.className);
 		
-		if ((span.className == 'default-selected' || span.className == "") && collectionId.length > 0) {
+		if ((span.className == 'default-selected' || span.className == 'default-selecting' || span.className == "") && collectionId.length > 0) {
 			console.log("Advanced Search: Default to:", collectionId, expandList);
 			
 			span.className = 'default-scanning';
@@ -393,10 +393,9 @@ var adahCDMPageMenu = null;
 						btn.click();
 					});
 				} else if (checked > 0) {
-					console.log("Checked:", nameToLabel, collectionId);
 					let span = document.getElementById('collections-h1-collection-id');
 					span.className = 'default-selecting';
-					span.innerText = ': ' + nameToLabel[collectionId];
+					span.innerText = ': ' + nameToLabel[collectionId];					
 				} /* if */
 				
 				// save the changes made to selections.
@@ -405,6 +404,16 @@ var adahCDMPageMenu = null;
 
 			span = document.getElementById('collections-h1-collection-id');
 			span.className = 'default-selected';
+			
+			if (checked>0 && !expandList) {
+				adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
+					let attrExp = btn.getAttribute('data-expando');
+					if (typeof(attrExp) != 'string' || attrExp.length==0) {
+						btn.setAttribute('data-expando', 'to-click');
+					} /* if */
+				});						
+			}
+
 		} /* if */
 
 	} /* adahCDMAdvancedSearchPageCollectionFilters() */
@@ -438,6 +447,15 @@ var adahCDMPageMenu = null;
 					adahCDMAdvancedSearchPageCollectionFilters(collectionId, false);
 					clearInterval(adahCDMAdvancedSearchPagePoll);
 					tockCount = 0;
+					
+					let toClick = document.querySelectorAll('[data-expando="to-click"]');
+					if (toClick.length > 0) {
+						for (let i=0; i<toClick.length; i++) {
+							let btn = toClick[i];
+							btn.setAttribute('data-expando', 'clicked');
+							setTimeout(function () { btn.click(); }, 100 /*ms*/);
+						} /* for */
+					} /* if */
 				} /* if */
 			} /* if */
 		}, 10 /*ms*/);
