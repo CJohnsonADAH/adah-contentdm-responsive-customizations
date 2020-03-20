@@ -352,9 +352,14 @@ var adahCDMPageMenu = null;
 	function adahCDMAdvancedSearchPageCollectionFilters(collectionId, expandList) {
 		let nameToLabel = {};
 		
-		if (collectionId.length > 0) {
+		let span = document.getElementById('collections-h1-collection-id');
+		console.log("Advanced Search: state=", span.className);
+		
+		if ((span.className == 'default-selected' || span.className == "") && collectionId.length > 0) {
 			console.log("Advanced Search: Default to:", collectionId, expandList);
 			
+			span.className = 'default-scanning';
+
 			let filterList = document.getElementsByClassName('SearchCollectionFilter-container');
 			
 			let checked=0;
@@ -390,13 +395,18 @@ var adahCDMPageMenu = null;
 				} else if (checked > 0) {
 					console.log("Checked:", nameToLabel, collectionId);
 					let span = document.getElementById('collections-h1-collection-id');
+					span.className = 'default-selecting';
 					span.innerText = ': ' + nameToLabel[collectionId];
 				} /* if */
 				
 				// save the changes made to selections.
 				adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) { btn.click(); }, '[data-id="updateBtn"]');
 			} /* for */
+
+			span = document.getElementById('collections-h1-collection-id');
+			span.className = 'default-selected';
 		} /* if */
+
 	} /* adahCDMAdvancedSearchPageCollectionFilters() */
 	
 	var adahCDMAdvancedSearchPagePoll;
@@ -424,6 +434,7 @@ var adahCDMPageMenu = null;
 				} /* for */
 				
 				if (i > 0) {
+					adahCDMAdvancedSearchPageCheckboxes_Monitor();
 					adahCDMAdvancedSearchPageCollectionFilters(collectionId, false);
 					clearInterval(adahCDMAdvancedSearchPagePoll);
 					tockCount = 0;
@@ -444,6 +455,30 @@ var adahCDMPageMenu = null;
 			} /* for */
 		}
 	}
+
+	function adahCDMAdvancedSearchPageCheckboxes_Monitor () {
+		let containers = document.getElementsByClassName('SearchCollectionFilter-container');
+		for (let i = 0; i < containers.length; i++) {
+			let inputs = containers[i].querySelectorAll('input[type="checkbox"]');
+			for (let j = 0; j < inputs.length; j++) {
+				if (inputs[j].className!='adah-cdm-monitored') {
+					inputs[j].className='adah-cdm-monitored'
+					inputs[j].addEventListener('click', function (e) {
+						let span = document.getElementById('collections-h1-collection-id');
+						let state = span.className;
+
+						if (state == 'default-selected') {
+							span.innerText = ':';
+							span.className = 'manually-selected';
+						}
+
+						console.log("CLICK(", e.target.name, "), state:", state, span.className);
+
+					});
+				}
+			} /* for */
+		} /* for */
+	} /* function adahCDMAdvancedSearchPageCheckboxes_Monitor() */
 	
 	function adahCDMAdvancedSearchPage (e) {
 		let jsonurl = '';
@@ -470,6 +505,8 @@ var adahCDMPageMenu = null;
 					console.log("h1", h1.innerHTML);
 				} /* for */
 			} /* for */
+			
+			adahCDMAdvancedSearchPageCheckboxes_Monitor();
 			
 			adahCDMAdvancedSearchPageButton_DoTo(function (btn, j) {
 				btn.id = 'btn-see-more-less-' + j;
