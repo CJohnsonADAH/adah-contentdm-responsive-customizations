@@ -317,7 +317,6 @@ var adahCDMPageMenu = null;
 		if (typeof(adahCDMPageMenu[scope])=='undefined') {
 			let jsonurl = '';
 			jsonurl = window.location.origin + '/customizations/collection/'+scope+'/pages/links.html';
-			console.log("check for menu", jsonurl);
 			
 			var xhttp = new XMLHttpRequest;
 			xhttp.onreadystatechange = function() {
@@ -374,7 +373,6 @@ var adahCDMPageMenu = null;
 						} /* if */
 					} /* if */
 					
-					/*console.log(filterListItems[j], checkMe);*/
 					if (filterListItems[j].name != "selectAll" && filterListItems[j].checked != checkMe) {
 						filterListItems[j].click();
 					} /* if */
@@ -442,7 +440,6 @@ var adahCDMPageMenu = null;
 	function adahCDMAdvancedSearchPage (e) {
 		let jsonurl = '';
 		jsonurl = window.location
-		console.log("advanced search: collection=", e.detail.collectionId, e.props, e, jsonurl);
 
 		if (typeof(e.detail.collectionId) != "undefined") {
 			let collectionId = e.detail.collectionId;
@@ -484,6 +481,6 @@ var adahCDMPageMenu = null;
 	document.addEventListener('cdm-advanced-search-page:ready', adahCDMAdvancedSearchPage)
 	document.addEventListener('cdm-advanced-search-page:update', adahCDMAdvancedSearchPage)
 	
-	document.addEventListener('cdm-app:ready', function (e) { console.log("CDM APP:", e); });
+	document.addEventListener('cdm-app:ready', function (e) { /*NOOP*/ });
 	
 })();
