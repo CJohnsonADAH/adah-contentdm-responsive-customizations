@@ -394,12 +394,20 @@ var adahCDMPageMenu = null;
 	} /* adahCDMAdvancedSearchPageCollectionFilters() */
 	
 	var adahCDMAdvancedSearchPagePoll;
+	var tockCount;
 	
 	function adahCDMAdvancedSearchPageMaybeFilterChecklist (collectionId) {
+		tockCount = 0;
 		
 		adahCDMAdvancedSearchPagePoll = setInterval(function () {
+			tockCount++;
+			if (tockCount > 20) {
+				clearInterval(adahCDMAdvancedSearchPagePoll);
+				tockCount = 0;
+			} /* if */
+			
 			let containers = document.getElementsByClassName('SearchCollectionFilter-container');
-			console.log("tock", containers);
+			console.log("tock", tockCount, containers);
 			if (containers.length > 0) {
 				var i=0;
 
