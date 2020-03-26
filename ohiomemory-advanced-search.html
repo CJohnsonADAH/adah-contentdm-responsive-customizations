@@ -7,7 +7,7 @@
     Advanced Search
 </title>
 
-<script src="/customizations/global/pages/homepage_resources/jquery.min.js"></script>
+<script src="/customizations/global/pages/assets/js/jquery-min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js"></script>
 
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css?ver=4.9.8" id="bootstrap-css-css" media="all" rel="stylesheet" type="text/css"/>
@@ -34,7 +34,7 @@ jQuery(document).ready(function($){
 
         e.preventDefault();
 
-        var searchurl = 'https://ohiomemory.org/digital/search';
+        var searchurl = 'https://digital.archives.alabama.gov/digital/search';
         var modevalues = [];
         var modeClasses = [];
         var searchCriteria = "";
@@ -178,7 +178,7 @@ jQuery(document).ready(function($){
             var lastCollectionSelected = collectionString.split("!");
             //$('.selectpicker').selectpicker('val', lastCollectionSelected);
             
-            $.getJSON( "https://ohiomemory.org/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+            $.getJSON( "https://digital.archives.alabama.gov/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
                 var items = [];
                 $.each( data, function( i, prop ) {
                     items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
@@ -1490,7 +1490,7 @@ div.add-or-submit {
 ];
 
 // create collection options
-$.getJSON( "https://ohiomemory.org/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+$.getJSON( "//digital.archives.alabama.gov/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
     var items = [];
     $.each( data, function( i, prop ) {
         items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
