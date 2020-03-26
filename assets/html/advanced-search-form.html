@@ -3,12 +3,13 @@
 <head>
 <!-- Advanced Search Form for a Responsive ContentDM Site -->
 <!-- Derived from Ohio Memory Advanced Search Form, https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html -->
-<!-- version: 2020.0306-0954 -->
+<!-- version: 2020.0306-1012 -->
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Advanced Search</title>
 <base href="//digital.archives.alabama.gov/customizations/global/pages/assets/html/advanced-search-form.html" />
+<link href="/customizations/global/pages/assets/css/advanced-search-form.css" media="all" rel="stylesheet" />
 
 <script src="/customizations/global/pages/assets/js/jquery-min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js"></script>
@@ -349,94 +350,8 @@ jQuery(document).ready(function($){
 });
 
 </script>
-<style>
-    .dropdown-menu>li>a {
-        background-color: #FFFFFF !important;
-    }
-    .dropdown-menu>li>a:hover {
-        background-color: #f5f5f5 !important;
-    }
-li.float_left {
-    list-style-type: none;
-    float: left;
-}
-li.criteria {
-    list-style-type: none;
-    display: inline-block;
-}
-ul.adv_search_ul_row {
-    margin: 0;
-    padding: 0;
-}
-ul ul {
-    list-style-type: square;
-    margin-bottom: 0;
-}
-li.adv_search_row {
-    list-style-type: none;
-}
-ul li {
-    margin-top: 4px;
-}
-ul#adv_search_query_builder_list {
-    margin: 0;
-    padding: 0;
-}
-#advanced-search {
-    display: inline-block;
-    margin-bottom: 0;
-    vertical-align: middle;
-    width:100%;
-}
-li.spaceMarTop5 {
-    margin-top: 8px;
-}
-
-li.spaceMar5L {
-    margin-left: 5px;
-}
-div.add-or-submit {
-    text-align: left;
-}
-.DateSearch-input {
-    display:inline-block;
-}
-.addline {
-    float:right;
-}
-.bs-actionsbox .btn-group button {
-    width: 20% !important;
-}
-#restrict_element {
-    margin-left: 70px;
-}
-.tingle-modal-box {
-    max-height:600px;
-}
-
-@media screen and (max-width: 768px) {
-    #restrict_element {
-        margin-left: 0px;
-    }
-    .show-tick {
-        width: 13em !important;
-    }
-    .btn-group>.btn:first-child:not(:last-child):not(.dropdown-toggle) {
-        width: 50% !important;
-    }
-    .btn-group>.btn:last-child:not(:first-child), .btn-group>.dropdown-toggle:not(:first-child) {
-        width: 50% !important;
-    }
-    .dropdown-menu {
-        width: 12em;
-    }
-    .dropdown-menu>li>a {
-        white-space: normal !important;
-    }
-}
-
-</style>
 </head>
+
 <body class="page-template page-template-template-full-width page-template-template-full-width-php page page-id-2703">
     <br/>
     <form class="form-inline" id="advSearchForm" name="searchForm">
