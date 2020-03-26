@@ -213,7 +213,7 @@
       return false;
     }
 
-    const links = [anchor.href];
+    let links = [anchor.href];
     // parse metadata
     const rows = document.querySelectorAll('tr[class*=metadatarow]');
     Array.from(rows).forEach(function(row) {
