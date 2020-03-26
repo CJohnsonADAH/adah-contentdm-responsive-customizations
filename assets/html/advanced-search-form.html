@@ -23,7 +23,8 @@
 // from: https://stackoverflow.com/questions/6644654/parse-an-url-in-javascript
 /**
  * @param string url
- * @return object
+ * @return Location an object containing the parsed-out components of the URL
+ * 		(e.g.: u.href, u.protocol, u.host, u.pathname, u.search, u.hash, u.origin, ...)
  */
 function parseUrl ( url ) {
 	let a = document.createElement('a');
@@ -529,10 +530,18 @@ jQuery(document).ready(function($){
 </html>
 
 <script>
+
+var advancedSearchForm = {};
+advancedSearchForm.init = function () {
+	this.insertCollectionOptions();
+	this.initFormatOptions();
+}
+
+advancedSearchForm.insertCollectionOptions = function () {
 /*
  * derived from comments in: https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html
  *
- * API:
+ * Uses the ContentDM API:
  * $.getJSON( "{cdmOriginUrl}/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) { ... } );
  * filters "data for collection options"
  *
@@ -554,32 +563,32 @@ jQuery(document).ready(function($){
  *  // ...
  * ]
  */
+	// create collection options
+	$.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+		var items = [];
+		$.each( data, function( i, prop ) {
+			items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
+		});
+		$("#selectCollections").html(items.join(""));
 
-// create collection options
-$.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
-    var items = [];
-    $.each( data, function( i, prop ) {
-        items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
-    });
-    $("#selectCollections").html(items.join(""));
-
-    // initialize collections drop-down
-    $('.collectionselectpicker').selectpicker({
-        actionsBox: true,
-        style: 'btn-info',
-        virtualScroll: true
-    });
-});
-
-
-
-// initialize format drop-down
-$('.formatselectpicker').selectpicker({
-    style: 'btn-info',
-    width: '18em',
-    size: 8
-});
+		// initialize collections drop-down
+		$('.collectionselectpicker').selectpicker({
+			actionsBox: true,
+			style: 'btn-info',
+			virtualScroll: true
+		});
+	});
+} /* advancedSearchForm.insertCollectionOptions() */
+advancedSearchForm.initFormatOptions = function () {
+	// initialize format drop-down
+	$('.formatselectpicker').selectpicker({
+		style: 'btn-info',
+		width: '18em',
+		size: 8
+	});
+} /* advancedSearchForm.initFormatOptions () */
 
 //$('.fieldselectpicker').selectpicker();
 
+advancedSearchForm.init();
 </script>
