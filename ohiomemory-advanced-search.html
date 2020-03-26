@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>
+    Advanced Search
+</title>
+
+<script src="/customizations/global/pages/homepage_resources/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js"></script>
+
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css?ver=4.9.8" id="bootstrap-css-css" media="all" rel="stylesheet" type="text/css"/>
+<link href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.3/css/bootstrap-select.min.css?ver=4.9.8" id="bootstrap-select-css-css" media="all" rel="stylesheet" type="text/css"/>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js?ver=4.9.8" type="text/javascript"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.3/js/bootstrap-select.min.js?ver=4.9.8" type="text/javascript"></script>
+
+<script type="text/javascript">
+    
+jQuery(document).ready(function($){
+
+    function isValidDate(dateString) {
+        var regEx1 = /^\d{4}-\d{2}-\d{2}$/;
+        var regEx2 = /^\d{4}-\d{2}$/;
+        var regEx3 = /^\d{4}$/;
+        if ( !dateString.match(regEx1) && !dateString.match(regEx2) && !dateString.match(regEx3) ) {
+            return false;  // Invalid format
+        } else {
+            return true;
+        }
+    }
+    
+    $( "#advSearchForm" ).submit(function(e) {
+
+        e.preventDefault();
+
+        var searchurl = 'https://ohiomemory.org/digital/search';
+        var modevalues = [];
+        var modeClasses = [];
+        var searchCriteria = "";
+        var searchtermvalues = [];
+        var connvalues = [];
+        var fieldvalues = [];
+        var crossCollectionSearch = $("#selectCollections").val() === null || $("#selectCollections").val().length > 1;
+
+
+
+        // search terms
+        var searchterms = $( "input[name='searchterm']" ).serializeArray();
+
+        $.each( searchterms, function( i, searchterm ) {
+            if ( modeClasses[i] != 'near' && searchterms[i].value != "" ) {
+                searchtermvalues.push(searchterm.value);
+            } else {
+                var searchText = searchterm.value;
+                searchText = searchText.replace(/  +/g, ' ');
+                searchText = searchText.trim(searchText);
+                var searchTermsArray = searchText.split(" ");
+                searchtermvalues.push(searchTermsArray.join(' near5 '));
+            }
+        });
+
+        // modes
+        var modes = $( "select[name='mode'] option:selected");
+        $.each( modes, function( i, mode ) {
+            modeClasses.push(mode.getAttribute('class'));
+            if (searchterms[i].value != "") {
+                modevalues.push(mode.value);
+            }
+        });
+
+        // fields
+        var fields = $( "select[name='field']" ).serializeArray();
+        $.each( fields, function( i, field ) {
+            
+            /*if (field.value == 'coverab') { 
+                if (!crossCollectionSearch) {
+                    field.value = 'time';
+                }
+            }*/
+            if (searchterms[i].value != "") {
+                fieldvalues.push(field.value);
+            }
+        });
+        sessionStorage.setItem('fieldvalues', fieldvalues.join("!"));
+
+        // collections
+        var collCriteria = ""; 
+        if ($("#selectCollections").val() !== null) {
+            var searchCollectionValues = $("#selectCollections").val();
+            if (searchCollectionValues.length > 0 && searchCollectionValues.length < 147) {
+                $('#restrict_options').text(searchCollectionValues.length + " collections chosen");
+                collCriteria = '/collection/' + searchCollectionValues.join("!");
+            }
+        }
+        /*else {
+            $('#restrict_options').text("All formats");
+            collCriteria = 'collection/all';
+        }*/ 
+        
+        // connectors
+        var conns = $( "select[name='conn']" ).serializeArray();
+        $.each( conns, function( i, conn ) {
+            if (searchterms[i].value != "") {
+                connvalues.push(conn.value);
+            }
+        });
+        
+        // formats (from drop-down)
+        if ( Array.isArray($("#selectFormats").val()) && $("#selectFormats").val().length > 0 ) {
+            searchtermvalues.push($("#selectFormats").val().join(" "));
+            fieldvalues.push("format");
+            modevalues.push("any");
+            connvalues.push("and");
+        } 
+
+        // dates (from input)
+        if ( isValidDate($("#firstDateField").val()) && isValidDate($("#secondDateField").val()) ) {
+            searchtermvalues.push($("#firstDateField").val().replace(/-/g, '') + "-" + $("#secondDateField").val().replace(/-/g, ''));
+            //if (searchCollectionValues.length > 1) { fieldvalues.push("date"); } else { fieldvalues.push("search"); }
+            if ($("#selectCollections").val() === null) { fieldvalues.push("date"); } else { fieldvalues.push("search"); }
+            modevalues.push("exact");
+            connvalues.push("and");
+        } 
+
+        if (searchtermvalues.length > 0) {
+            var searchvals = searchtermvalues.join("!");
+            if ( searchvals.startsWith("!") ) {
+                searchvals = searchvals.substr(1);
+            }
+            searchCriteria = 'searchterm/' + searchvals;
+        }
+        // https://ohiomemory.org/customizations/global/pages/advancedsearch_resources/advanced_search.html?undefined&search/searchterm/buckeye%20steamboat/field/all/mode/all/conn/and
+        // e.g https://ohiomemory.org/digital/search/collection/p267401coll32!p16007coll51/searchterm/war!battle!19050101-19191231/field/subjec!all!date/mode/all!all!exact/conn/and!and!and/order/nosort 1905-01-01 1919-12-31
+        searchurl += collCriteria + '/' + searchCriteria + '/field/' + fieldvalues.join("!") + '/mode/' + modevalues.join("!") + '/conn/' + connvalues.join("!");
+
+        //if (collCriteria.match('p16007coll22')) {
+
+            window.parent.location.href = searchurl;
+        //}
+
+    });
+
+
+    $( "#addfield" ).click(function(e) {
+        e.preventDefault();
+        addLine();
+    });
+
+    $('.close').click(function() {
+        $(this).parent().parent().parent().remove();
+    });
+
+    function makeIsoDate(d) {
+        var dd = "";
+        d.substring(0, 4) !== "" ? dd += d.substring(0, 4) : "";
+        d.substring(4, 6) !== "" ? dd += "-" + d.substring(4, 6) : "";
+        d.substring(6, 8) !== "" ? dd += "-" + d.substring(6, 8) : "";
+        return dd;
+    }
+
+    // autofill search form using values from from URL
+    // e.g. /customizations/global/pages/advancedsearch_resources/advanced_search.html?p267401coll34!p267401coll32&search/collection/p267401coll34!p267401coll32/searchterm/war!1860-1863/field/subjec!date/mode/all!all/conn/and!and
+    
+    //console.log(window.location.search);
+    //console.log(window.location.search.substring(1).split('&search'));
+    //if (window.location.search.substring(1) !== 'undefined&' && window.location.search.substring(1) != "") {
+
+    if (sessionStorage.getItem('lastSearchUrl') !== null) {
+        var ssUrl = sessionStorage.getItem('lastSearchUrl');
+
+        // if coveraa, change to place
+        //ssUrl = ssUrl.replace(/coveraa/, 'Place');
+        //console.log('ssUrl: ' + ssUrl);
+        if (ssUrl.match(/\/collection\//) != null) {
+            var collectionString = ssUrl.replace(/^.*?\/collection\/(.*?)\/.*/, '$1');
+            //var lastCollectionSelected = lastCriteriaSelected[0].split("!");
+            var lastCollectionSelected = collectionString.split("!");
+            //$('.selectpicker').selectpicker('val', lastCollectionSelected);
+            
+            $.getJSON( "https://ohiomemory.org/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+                var items = [];
+                $.each( data, function( i, prop ) {
+                    items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
+                });
+                $("#selectCollections").html(items.join(""));
+
+                // initialize collections drop-down
+                $('.collectionselectpicker').selectpicker({
+                    actionsBox: true,
+                    style: 'btn-info',
+                    virtualScroll: true
+                });
+                $('.collectionselectpicker').selectpicker('val', lastCollectionSelected);
+            });
+
+            
+        }
+        //console.log(sessionStorage);
+        //console.log(lastCriteriaSelected[1]);
+        // replaced lastCriteriaSelected[1] with ssURL
+        //if ( ssURL.includes('searchterm') ) {
+
+            // search terms
+            //var termString = ssURL.replace(/^.*?searchterm\/(.*?)(\/.*|$)/, '$1');
+            var termString = ssUrl.replace(/^.*?searchterm\/(.*?)(\/.*|$)/, '$1');
+            var terms = termString.split("!");
+            var formatValues = ["picture", "objects", "books", "manuscripts", "newspapers", "government", "sound", "video"];
+
+            // fields
+            var fieldString = ssUrl.replace(/^.*?\/field\/(.*?)\/.*/, '$1');
+            var fields = fieldString.split("!");
+
+            // mode
+            var modeString = ssUrl.replace(/^.*?\/mode\/(.*?)\/.*/, '$1');
+            var modes = modeString.split("!");
+
+            // connector
+            var connString = ssUrl.replace(/^.*?\/conn\/(.*?)(\/|$)/, '$1');
+            var conns = connString.split("!");
+
+            // dates
+            var dates = [];
+            if (fields[0] == "date" || fields[0] == "search") {
+                dates = terms[0].split("-");
+                $('#firstDateField').val(makeIsoDate(dates[0]));
+                $('#secondDateField').val(makeIsoDate(dates[1]));
+            }
+            
+            if (fields[0] == "Place" || fields[0] == "coveraa") {
+                fields[0] = "coveraa";
+                //$('#mode option[class="coveraa"]').attr('selected', 'selected');
+            }
+            //$('.fieldselectpicker').selectpicker('val', fields[0]);
+            /*if (fields[0] == "time" || fields[0] == "coverab") {
+                fields[0] = "coverab";
+            }*/
+
+            if (modes[0].length < 3 || modes[0].length > 5) { modes[0] = "all"; }
+            if (fields[0].length < 4 || fields[0].length > 7) { fields[0] = "all"; }
+            if (conns[0].length < 2 || conns[0].length > 3) { conns[0] = "and"; }
+            if (fields[0] == "format" && formatValues.indexOf(decodeURI(terms[0]).split(" ")[0]) > -1) {
+                var lastFormatsSelected = decodeURI(terms[0]).split(" ");
+                $('.formatselectpicker').selectpicker();
+                $('.formatselectpicker').selectpicker('val', lastFormatsSelected);
+            } else {
+                $("select[name='field']").val(fields[0]);
+            }
+            if ( decodeURI(terms[0]).match(/near5/) ) {
+                var unencodedTermsString = decodeURI(terms[0]).replace(/' '/g, '');
+                var termsArray = unencodedTermsString.split('near5');
+                terms[0] = termsArray.join(" ");
+                //console.log($('#mode option[class="near"]'));
+                $('#mode option[class="near"]').attr('selected', 'selected');
+            } else {
+                $("select[name='mode']").val(modes[0]);
+            }
+            if (!decodeURI(terms[0]).match( /(\d\d\d\d.*\d\d|\d\d\d\d)/mg ) ) {
+                $("input[name='searchterm']").val( decodeURI(terms[0]) );
+            } 
+            
+            $("select[name='conn']").val(conns[0]);
+
+            // need to addline() for each term after first
+            if (terms.length > 1) {
+                for (i = 1; i < terms.length; i++) {
+                    if (modes[i].length < 3 || modes[i].length > 5) { modes[i] = "all"; }
+                    if (fields[i].length < 4 || fields[i].length > 7) { fields[i] = "all"; }
+                    if (conns[i].length < 2 || conns[i].length > 3) { conns[i] = "and"; }
+                    if (fields[i] == "date" || fields[i] == "search") {
+                        dates = terms[i].split("-");
+                        $('#firstDateField').val(makeIsoDate(dates[0]));
+                        $('#secondDateField').val(makeIsoDate(dates[1]));
+                        continue;
+                    }
+                    if (fields[i] == "Place" || fields[i] == "coveraa") {
+                        fields[i] = "coveraa";
+                    }
+                    //$('.fieldselectpicker').selectpicker('val', fields[0]);
+                    if (fields[i] == "format" && formatValues.indexOf(decodeURI(terms[i]).split(" ")[0]) > -1) {
+                        var lastFormatsSelected = decodeURI(terms[i]).split(" ");
+                        $('.formatselectpicker').selectpicker();
+                        $('.formatselectpicker').selectpicker('val', lastFormatsSelected);
+                        continue;
+                    } 
+                    //$("select[name='field']").val(fields[i]);
+                    //$("select[name='field']")[i].value = fields[i];
+                    /*console.log(i);
+                    console.log(document.querySelectorAll('#field')[i]);
+                    console.log(fields[i]);
+                    document.querySelectorAll('#field')[i] = fields[i];
+*/
+                    /*else {
+                        $("select[name='field']").val(fields[i]);
+                        continue;   
+                    }*/
+                    addLine(terms[i], modes[i], fields[i], conns[i]); 
+                }
+            }
+        //}
+    }
+
+    function addLine(sterm, mode, field, conn) {
+        
+        (typeof sterm == "undefined" || sterm == "") ? sterm = "" : sterm = sterm;
+        (typeof mode == "undefined" || mode == "") ? mode = "all" : mode = mode;
+        (typeof field == "undefined" || field == "") ? field = "all" : field = field;
+        (typeof conn == "undefined" || conn == "") ? conn = "and" : conn = conn;
+        
+        var newLine = $(".adv_search_row:last").clone(true, true);
+        $( "#adv_search_query_builder_list" ).append( newLine );
+        var newInput = newLine.find("input");
+        var newSelects = newLine.find("select");
+        
+        if ( decodeURI(sterm).match(/near5/) ) {
+            var unencodedTermsString = decodeURI(sterm).replace(/' '/g, '');
+            var termsArray = unencodedTermsString.split('near5');
+            sterm = termsArray.join(" ");
+            $(newSelects[0]).children().last().attr('selected', 'selected');
+        }  else {
+            $(newSelects[0]).val(mode);
+        }
+        
+        newInput.val(sterm);
+        $(newSelects[1]).val(field);
+        $(newSelects[2]).val(conn);
+    }
+
+});
+
+</script>
+<style>
+    .dropdown-menu>li>a {
+        background-color: #FFFFFF !important;
+    }
+    .dropdown-menu>li>a:hover {
+        background-color: #f5f5f5 !important;
+    }
+li.float_left {
+    list-style-type: none;
+    float: left;
+}
+li.criteria {
+    list-style-type: none;
+    display: inline-block;
+}
+ul.adv_search_ul_row {
+    margin: 0;
+    padding: 0;
+}
+ul ul {
+    list-style-type: square;
+    margin-bottom: 0;
+}
+li.adv_search_row {
+    list-style-type: none;
+}
+ul li {
+    margin-top: 4px;
+}
+ul#adv_search_query_builder_list {
+    margin: 0;
+    padding: 0;
+}
+#advanced-search {
+    display: inline-block;
+    margin-bottom: 0;
+    vertical-align: middle;
+    width:100%;
+}
+li.spaceMarTop5 {
+    margin-top: 8px;
+}
+
+li.spaceMar5L {
+    margin-left: 5px;
+}
+div.add-or-submit {
+    text-align: left;
+}
+.DateSearch-input {
+    display:inline-block;
+}
+.addline {
+    float:right;
+}
+.bs-actionsbox .btn-group button {
+    width: 20% !important;
+}
+#restrict_element {
+    margin-left: 70px;
+}
+.tingle-modal-box {
+    max-height:600px;
+}
+
+@media screen and (max-width: 768px) {
+    #restrict_element {
+        margin-left: 0px;
+    }
+    .show-tick {
+        width: 13em !important;
+    }
+    .btn-group>.btn:first-child:not(:last-child):not(.dropdown-toggle) {
+        width: 50% !important;
+    }
+    .btn-group>.btn:last-child:not(:first-child), .btn-group>.dropdown-toggle:not(:first-child) {
+        width: 50% !important;
+    }
+    .dropdown-menu {
+        width: 12em;
+    }
+    .dropdown-menu>li>a {
+        white-space: normal !important;
+    }
+}
+
+</style>
+</head>
+<body class="page-template page-template-template-full-width page-template-template-full-width-php page page-id-2703">
+    <br/>
+    <form class="form-inline" id="advSearchForm" name="searchForm">
+        <div id="advanced-search-box" style="text-align: center;">
+            <div class="form-group" id="advanced-search">      
+                <div class="AdvancedSearch-sectionWrapper">
+                    <div class="col-md-8 col-md-offset-2 AdvancedSearch-content">
+                        <div class="well well-sm DateSearch-container">
+                            <ul id="adv_search_query_builder_list">
+                                <li class="adv_search_row">
+                                    <ul class="adv_search_ul_row">
+                                        <li class="criteria">
+                                            <select id="mode" class="form-control" name="mode">
+                                                <option class="all" selected="selected" value="all">
+                                                    All of the words
+                                                </option>
+                                                <option class="any" value="any">
+                                                    Any of the words
+                                                </option>
+                                                <option class="exact" value="exact">
+                                                    The exact phrase
+                                                </option>
+                                                <option class="none" value="none">
+                                                    None of the words
+                                                </option>
+                                                <option class="near" value="exact">
+                                                    Within 5 words
+                                                </option>
+                                            </select>
+                                        </li>
+                                        <li class="criteria spaceMar5L spacePad5">
+                                            <input class="form-control" name="searchterm" type="text"/>
+                                        </li>
+                                        <span>&nbsp;in&nbsp;</span>
+                                        <li class="criteria spaceMar5L">
+                                                <select id="field" class="form-control" name="field">
+                                                    <option class="all" selected="selected" value="all">
+                                                        All fields
+                                                    </option>
+                                                    <option class="title" value="title">
+                                                        Title
+                                                    </option>
+                                                    <option class="creato" value="creato">
+                                                        Creator
+                                                    </option>
+                                                    <option class="subjec" value="subjec">
+                                                        Subject
+                                                    </option>
+                                                    <option class="coveraa" value="coveraa">
+                                                        Place
+                                                    </option>
+                                                    <option class="descri" value="descri">
+                                                        Description
+                                                    </option>
+                                                    <option class="contri" value="relatig">
+                                                        Collection
+                                                    </option>
+                                                    <option class="contri" value="contri">
+                                                        Contributor
+                                                    </option>
+                                                    <option class="date" value="date">
+                                                        Date of Original
+                                                    </option>
+                                                    <option class="format" value="format">
+                                                        Format
+                                                    </option>
+                                                    <option class="identi" value="identi">
+                                                        Identifier
+                                                    </option>
+                                                    <option class="source" value="source">
+                                                        Source
+                                                    </option>
+                                                    <option class="extent" value="extent">
+                                                        Extent
+                                                    </option>
+                                                </select>
+                                            
+                                        </li>
+                                        <li class="criteria spaceMar5L">
+                                            <select class="form-control" name="conn">
+                                                <option selected="selected" value="and">
+                                                    and
+                                                </option>
+                                                <option value="or">
+                                                    or
+                                                </option>
+                                            </select>
+                                        </li>
+                                        <li class="adv_search_option_remove_link_box criteria spacePad5 spaceMarTop5">&nbsp;&nbsp;
+                                            <button class="close" type="button">
+                                                ×
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <br/>
+                            <a alt="" href="" id="addfield">
+                                Add another line
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="AdvancedSearch-sectionWrapper" style="text-align:left">
+                    <div class="col-md-8 col-md-offset-2 AdvancedSearch-content">
+                        <div class="well well-sm">
+                            <div id="restrict_element" class="form-group checkbox-inline">
+                                Restrict Search to: &nbsp;&nbsp;
+                                <select id="selectFormats" class="form-group formatselectpicker" title="Select Formats" multiple data-selected-text-format="count">
+                                    <option value="picture"> Images (photographs, paintings, etc.)</option>
+                                    <option value="objects"> Objects (archaeological, historical, natural history)</option>
+                                    <option value="books"> Books</option>
+                                    <option value="manuscripts"> Manuscripts (letters, diaries, etc.)</option>
+                                    <option value="newspapers"> Newspapers</option>
+                                    <option value="government"> State agency publications</option>
+                                    <option value="sound"> Sound</option>
+                                    <option value="video"> Video</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="AdvancedSearch-sectionWrapper">
+                    <div class="col-md-8 col-md-offset-2 AdvancedSearch-content">
+                        <div class="well well-sm DateSearch-container">
+                            <div class="DateSearch-flexContainer">
+                                <div class="DateSearch-input">
+                                    <label>
+                                        <span>Dates between</span>
+                                        <input type="text" aria-label="Enter Date" class="form-control" value="" id="firstDateField">
+                                    </label>
+                                </div>
+                                <div class="DateSearch-input">
+                                    <label>
+                                        <span>and</span>
+                                        <input type="text" aria-label="Enter Date 2" class="form-control" value="" id="secondDateField">
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="DateSearch-footer">
+                                <div></div>
+                            <div>
+                                <span>e.g. yyyy, yyyy-mm, yyyy-mm-dd</span>
+                            </div>
+                            <div></div>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                </div></div>
+                <div class="AdvancedSearch-sectionWrapper" style="text-align:left">
+                    <div class="col-md-8 col-md-offset-2 AdvancedSearch-content">
+                        <div class="well well-sm">
+                            <div id="restrict_element" class="form-group checkbox-inline">
+                                <select id="selectCollections" class="form-group collectionselectpicker" title="Select Collections" multiple data-selected-text-format="count"></select>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
+                                <!--<span id="sourcesHelp" class="linkClass" title="Clicking the checkbox will exclude resources containing full text, such as newspapers or books.">Exclude full text sources</span>? 
+                                <input type="checkbox" name="fulltext" id="ft-yes">-->
+                                <!--<input type="checkbox" name="fulltext" id="ft-yes" style=""> <a href="#" onclick="alert('hi');return false;">Exclude full text sources?</a>-->  
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="clear:both;margin-top:10px"></div>
+                <div class="submit">
+                    <button id="submit_search" class="btn btn-primary" type="submit">Submit</button> 
+                </div>
+
+            </div>
+        </div>
+    </form>
+</body>
+</html>
+
+<script>
+
+    // Can get this from http://www.ohiomemory.org/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json
+    // Could do $.getJSON( "http://www.ohiomemory.org/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+    // data for collection options
+    var data_old = [
+   {
+      "alias":"\/p16007coll29",
+      "name":"1840s Campaign Newspapers",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll29",
+      "secondary_alias":"2"
+   },
+   {
+      "alias":"\/p15005coll3",
+      "name":"Adena Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll3",
+      "secondary_alias":"p15005coll3"
+   },
+   {
+      "alias":"\/p16007coll68",
+      "name":"Akron Reporter",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll68",
+      "secondary_alias":"p16007coll68"
+   },
+   {
+      "alias":"\/p16007coll19",
+      "name":"Albert J. Ewing Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll19",
+      "secondary_alias":"p16007coll19"
+   },
+   {
+      "alias":"\/p16007coll48",
+      "name":"Alliance High School's Red and Blue",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll48",
+      "secondary_alias":"21"
+   },
+   {
+      "alias":"\/p16007coll36",
+      "name":"Alliance Review",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll36",
+      "secondary_alias":"9"
+   },
+   {
+      "alias":"\/p16007coll60",
+      "name":"Americk\u00e9 D\u011blnick\u00e9 Listy (American Workingmen's News)",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll60",
+      "secondary_alias":"33"
+   },
+   {
+      "alias":"\/p15005coll31",
+      "name":"Amherst Newspapers",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll31",
+      "secondary_alias":"p15005coll31"
+   },
+   {
+      "alias":"\/p267401coll33",
+      "name":"Amherst Public Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll33",
+      "secondary_alias":"p267401coll33"
+   },
+   {
+      "alias":"\/p267401coll7",
+      "name":"Archaeology Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll7",
+      "secondary_alias":"p267401coll7"
+   },
+   {
+      "alias":"\/p16007coll14",
+      "name":"Armstrong Air and Space Museum Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll14",
+      "secondary_alias":"p16007coll14"
+   },
+   {
+      "alias":"\/p16007coll41",
+      "name":"Athens County Gazette",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll41",
+      "secondary_alias":"14"
+   },
+   {
+      "alias":"\/p16007coll87",
+      "name":"Bureau of Workers' Compensation Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll87",
+      "secondary_alias":"p16007coll87"
+   },
+   {
+      "alias":"\/p15005coll28",
+      "name":"Bluffton Public Library Digital Archive Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll28",
+      "secondary_alias":"p15005coll28"
+   },
+   {
+      "alias":"\/caniff",
+      "name":"Caniff Collection",
+      "path":"\/cdm\/sites\/16007\/data\/caniff",
+      "secondary_alias":"caniff"
+   },
+   {
+      "alias":"\/p15005coll36",
+      "name":"Cincinnati Federal Land Office Records",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll36",
+      "secondary_alias":"p15005coll36"
+   },
+   {
+      "alias":"\/p16007coll45",
+      "name":"Circleville Democrat and Watchman",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll45",
+      "secondary_alias":"18"
+   },
+   {
+      "alias":"\/p16007coll16",
+      "name":"Civil War Era Newspapers of Mount Vernon",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll16",
+      "secondary_alias":"p16007coll16"
+   },
+   {
+      "alias":"\/p16007coll50",
+      "name":"Cleveland Heights-University Heights Public Library Digital Archive",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll50",
+      "secondary_alias":"23"
+   },
+   {
+      "alias":"\/p15005coll19",
+      "name":"Clyde Public Library's Thaddeus B. Hurd Digital Archive",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll19",
+      "secondary_alias":"p15005coll19"
+   },
+   {
+      "alias":"\/p16007coll43",
+      "name":"Columbus Westbote",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll43",
+      "secondary_alias":"16"
+   },
+   {
+      "alias":"\/p15005coll41",
+      "name":"Community Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll41",
+      "secondary_alias":"p15005coll41"
+   },
+   {
+      "alias":"\/p16007coll7",
+      "name":"Connecting to Collections",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll7",
+      "secondary_alias":"p16007coll7"
+   },
+   {
+      "alias":"\/p15005coll20",
+      "name":"Defiance Public Library System Digital Archive",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll20",
+      "secondary_alias":"p15005coll20"
+   },
+   {
+      "alias":"\/p16007coll6",
+      "name":"Delaware County Historical Society Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll6",
+      "secondary_alias":"p16007coll6"
+   },
+   {
+      "alias":"\/p16007coll56",
+      "name":"Delaware Daily Journal-Herald",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll56",
+      "secondary_alias":"29"
+   },
+   {
+      "alias":"\/p16007coll27",
+      "name":"Eastern Shawnee Tribe of Oklahoma Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll27",
+      "secondary_alias":"p16007coll27"
+   },
+   {
+      "alias":"\/p15005coll23",
+      "name":"Evergreen Community Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll23",
+      "secondary_alias":"p15005coll23"
+   },
+   {
+      "alias":"\/p15005coll21",
+      "name":"Findlay-Hancock County Public Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll21",
+      "secondary_alias":"p15005coll21"
+   },
+   {
+      "alias":"\/p15005coll13",
+      "name":"Flint Ridge Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll13",
+      "secondary_alias":"p15005coll13"
+   },
+   {
+      "alias":"\/p15005coll12",
+      "name":"Fort Hill Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll12",
+      "secondary_alias":"p15005coll12"
+   },
+   {
+      "alias":"\/p15005coll6",
+      "name":"Fort Meigs Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll6",
+      "secondary_alias":"p15005coll6"
+   },
+   {
+      "alias":"\/p267401coll30",
+      "name":"Gay Ohio History Initiative Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll30",
+      "secondary_alias":"p267401coll30"
+   },
+   {
+      "alias":"\/p16007coll61",
+      "name":"Gay Ohio History Initiative Community Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll61",
+      "secondary_alias":"p16007coll61"
+   },
+   {
+      "alias":"\/p267401coll6",
+      "name":"Gospel Herald",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll6",
+      "secondary_alias":"p267401coll6"
+   },
+   {
+      "alias":"\/p16007coll64",
+      "name":"Grand Valley Public Library Valley Memories",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll64",
+      "secondary_alias":"p16007coll64"
+   },
+   {
+      "alias":"\/p16007coll66",
+      "name":"Hamilton Intelligencer",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll66",
+      "secondary_alias":"p16007coll66"
+   },
+   {
+      "alias":"\/p267401coll29",
+      "name":"Harris-Elmore Public Library Digital Collections",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll29",
+      "secondary_alias":"p267401coll29"
+   },
+   {
+      "alias":"\/p267401coll26",
+      "name":"Harris-Elmore Public Library Digital Collections - Birth Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll26",
+      "secondary_alias":"p267401coll26"
+   },
+   {
+      "alias":"\/p267401coll14",
+      "name":"Harris-Elmore Public Library Digital Collections - Census Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll14",
+      "secondary_alias":"p267401coll14"
+   },
+   {
+      "alias":"\/p267401coll15",
+      "name":"Harris-Elmore Public Library Digital Collections - Church Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll15",
+      "secondary_alias":"p267401coll15"
+   },
+   {
+      "alias":"\/p267401coll16",
+      "name":"Harris-Elmore Public Library Digital Collections - County Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll16",
+      "secondary_alias":"p267401coll16"
+   },
+   {
+      "alias":"\/p267401coll17",
+      "name":"Harris-Elmore Public Library Digital Collections - Court Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll17",
+      "secondary_alias":"p267401coll17"
+   },
+   {
+      "alias":"\/p267401coll18",
+      "name":"Harris-Elmore Public Library Digital Collections - Death and Cemetery Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll18",
+      "secondary_alias":"p267401coll18"
+   },
+   {
+      "alias":"\/p267401coll28",
+      "name":"Harris-Elmore Public Library Digital Collections - Journals",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll28",
+      "secondary_alias":"p267401coll28"
+   },
+   {
+      "alias":"\/p267401coll19",
+      "name":"Harris-Elmore Public Library Digital Collections - Maps",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll19",
+      "secondary_alias":"p267401coll19"
+   },
+   {
+      "alias":"\/p267401coll20",
+      "name":"Harris-Elmore Public Library Digital Collections - Marriage Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll20",
+      "secondary_alias":"p267401coll20"
+   },
+   {
+      "alias":"\/p267401coll27",
+      "name":"Harris-Elmore Public Library Digital Collections - Military Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll27",
+      "secondary_alias":"p267401coll27"
+   },
+   {
+      "alias":"\/p267401coll21",
+      "name":"Harris-Elmore Public Library Digital Collections Naturalization and Immigration",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll21",
+      "secondary_alias":"p267401coll21"
+   },
+   {
+      "alias":"\/p267401coll22",
+      "name":"Harris-Elmore Public Library Digital Collections - News Articles",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll22",
+      "secondary_alias":"p267401coll22"
+   },
+   {
+      "alias":"\/p267401coll13",
+      "name":"Harris-Elmore Public Library Digital Collections - Obituaries",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll13",
+      "secondary_alias":"p267401coll13"
+   },
+   {
+      "alias":"\/p267401coll23",
+      "name":"Harris-Elmore Public Library Digital Collections - Photographs",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll23",
+      "secondary_alias":"p267401coll23"
+   },
+   {
+      "alias":"\/p267401coll24",
+      "name":"Harris-Elmore Public Library Digital Collections - Probate Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll24",
+      "secondary_alias":"p267401coll24"
+   },
+   {
+      "alias":"\/p267401coll25",
+      "name":"Harris-Elmore Public Library Digital Collections - School Records",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll25",
+      "secondary_alias":"p267401coll25"
+   },
+   {
+      "alias":"\/p16007coll40",
+      "name":"Huron Historical Society Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll40",
+      "secondary_alias":"13"
+   },
+   {
+      "alias":"\/p15005coll42",
+      "name":"Ida Rupp Public Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll42",
+      "secondary_alias":"p15005coll42"
+   },
+   {
+      "alias":"\/p16007coll15",
+      "name":"Joe Munroe Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll15",
+      "secondary_alias":"p16007coll15"
+   },
+   {
+      "alias":"\/p16007coll20",
+      "name":"John Sherman Manuscript Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll20",
+      "secondary_alias":"p16007coll20"
+   },
+   {
+      "alias":"\/p16007coll83",
+      "name":"Kent Historical Society and Museum Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll83",
+      "secondary_alias":"p16007coll83"
+   },
+   {
+      "alias":"\/p16007coll57",
+      "name":"Kent Tribune",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll57",
+      "secondary_alias":"30"
+   },
+   {
+      "alias":"\/p16007coll81",
+      "name":"Kenton Graphic-News-Republican",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll81",
+      "secondary_alias":"p16007coll81"
+   },
+   {
+      "alias":"\/p15005coll43",
+      "name":"Lakeside Heritage Society Archives",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll43",
+      "secondary_alias":"p15005coll43"
+   },
+   {
+      "alias":"\/p16007coll84",
+      "name":"Lebanon Western Star",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll84",
+      "secondary_alias":"p16007coll84"
+   },
+   {
+      "alias":"\/p16007coll71",
+      "name":"Lima Times-Democrat",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll71",
+      "secondary_alias":"p16007coll71"
+   },
+   {
+      "alias":"\/p15005coll17",
+      "name":"Logan County Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll17",
+      "secondary_alias":"p15005coll17"
+   },
+   {
+      "alias":"\/p16007coll70",
+      "name":"Lorain County Memory",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll70",
+      "secondary_alias":"p16007coll70"
+   },
+   {
+      "alias":"\/p16007coll78",
+      "name":"Lorain Historical Society Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll78",
+      "secondary_alias":"p16007coll78"
+   },
+   {
+      "alias":"\/p16007coll62",
+      "name":"Mahoning Dispatch",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll62",
+      "secondary_alias":"p16007coll62"
+   },
+   {
+      "alias":"\/p16007coll63",
+      "name":"Malone Aviso",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll63",
+      "secondary_alias":"p16007coll63"
+   },
+   {
+      "alias":"\/p15005coll39",
+      "name":"Massillon Memory",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll39",
+      "secondary_alias":"p15005coll39"
+   },
+   {
+      "alias":"\/p16007coll59",
+      "name":"McComb Public Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll59",
+      "secondary_alias":"32"
+   },
+   {
+      "alias":"\/p16007coll55",
+      "name":"Morrow County Republican",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll55",
+      "secondary_alias":"28"
+   },
+   {
+      "alias":"\/p16007coll85",
+      "name":"Mount St. Joseph University Digital Archives",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll85",
+      "secondary_alias":"p16007coll85"
+   },
+   {
+      "alias":"\/p16007coll3",
+      "name":"Museum of Fulton County Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll3",
+      "secondary_alias":"p16007coll3"
+   },
+   {
+      "alias":"\/p267401coll37",
+      "name":"Muskingum County Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll37",
+      "secondary_alias":"p267401coll37"
+   },
+   {
+      "alias":"\/p15005coll22",
+      "name":"My War, Northwest Ohioans Remember WWII",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll22",
+      "secondary_alias":"p15005coll22"
+   },
+   {
+      "alias":"\/p15005coll34",
+      "name":"National Afro-American Museum and Cultural Center",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll34",
+      "secondary_alias":"p15005coll34"
+   },
+   {
+      "alias":"\/p16007coll18",
+      "name":"National Road and Zane Grey Museum Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll18",
+      "secondary_alias":"p16007coll18"
+   },
+   {
+      "alias":"\/p15005coll32",
+      "name":"New Deal Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll32",
+      "secondary_alias":"p15005coll32"
+   },
+   {
+      "alias":"\/p15005coll11",
+      "name":"Newark Earthworks Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll11",
+      "secondary_alias":"p15005coll11"
+   },
+   {
+      "alias":"\/p16007coll44",
+      "name":"Noble County Republican",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll44",
+      "secondary_alias":"17"
+   },
+   {
+      "alias":"\/p16007coll23",
+      "name":"North Canton Sun",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll23",
+      "secondary_alias":"p16007coll23"
+   },
+   {
+      "alias":"\/p16007coll30",
+      "name":"Northwest Narratives",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll30",
+      "secondary_alias":"3"
+   },
+   {
+      "alias":"\/flags",
+      "name":"Ohio Battle Flag Collection",
+      "path":"\/cdm\/sites\/16007\/data\/flags",
+      "secondary_alias":"flags"
+   },
+   {
+      "alias":"\/addresses",
+      "name":"Ohio Governors Collection",
+      "path":"\/cdm\/sites\/16007\/data\/addresses",
+      "secondary_alias":"addresses"
+   },
+   {
+      "alias":"\/p267401coll34",
+      "name":"Ohio Guide Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll34",
+      "secondary_alias":"p267401coll34"
+   },
+   {
+      "alias":"\/aids",
+      "name":"Ohio History Connection Finding Aids Collection",
+      "path":"\/cdm\/sites\/16007\/data\/aids",
+      "secondary_alias":"aids"
+   },
+   {
+      "alias":"\/p267401coll32",
+      "name":"Ohio History Connection Selections",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll32",
+      "secondary_alias":"p267401coll32"
+   },
+   {
+      "alias":"\/ojc",
+      "name":"Ohio Jewish Chronicle",
+      "path":"\/cdm\/sites\/16007\/data\/ojc",
+      "secondary_alias":"ojc"
+   },
+   {
+      "alias":"\/p267401coll36",
+      "name":"Ohio Memory Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p267401coll36",
+      "secondary_alias":"p267401coll36"
+   },
+   {
+      "alias":"\/p15005coll9",
+      "name":"Ohio National Guard Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll9",
+      "secondary_alias":"p15005coll9"
+   },
+   {
+      "alias":"\/p16007coll32",
+      "name":"Ohio Newspaper Selections",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll32",
+      "secondary_alias":"5"
+   },
+   {
+      "alias":"\/p16007coll22",
+      "name":"Ohio State Journal",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll22",
+      "secondary_alias":"p16007coll22"
+   },
+   {
+      "alias":"\/p16007coll28",
+      "name":"Ohio State Monitor",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll28",
+      "secondary_alias":"1"
+   },
+   {
+      "alias":"\/p16007coll52",
+      "name":"Ohio State News",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll52",
+      "secondary_alias":"25"
+   },
+   {
+      "alias":"\/p16007coll47",
+      "name":"Ohio State of the State Addresses",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll47",
+      "secondary_alias":"20"
+   },
+   {
+      "alias":"\/p16007coll13",
+      "name":"Ohio State Summer Library School",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll13",
+      "secondary_alias":"p16007coll13"
+   },
+   {
+      "alias":"\/p16007coll26",
+      "name":"Ohio Statesman",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll26",
+      "secondary_alias":"p16007coll26"
+   },
+   {
+      "alias":"\/p16007coll24",
+      "name":"Ohioana Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll24",
+      "secondary_alias":"p16007coll24"
+   },
+   {
+      "alias":"\/p15005coll37",
+      "name":"Oral History Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll37",
+      "secondary_alias":"p15005coll37"
+   },
+   {
+      "alias":"\/p16007coll4",
+      "name":"Ottawa County Museum Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll4",
+      "secondary_alias":"p16007coll4"
+   },
+   {
+      "alias":"\/p15005coll24",
+      "name":"Pemberville Public Library Digital Archives",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll24",
+      "secondary_alias":"p15005coll24"
+   },
+   {
+      "alias":"\/p16007coll2",
+      "name":"Putnam County Historical Society Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll2",
+      "secondary_alias":"p16007coll2"
+   },
+   {
+      "alias":"\/p16007coll58",
+      "name":"Rossford Country and Town",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll58",
+      "secondary_alias":"31"
+   },
+   {
+      "alias":"\/p15005coll25",
+      "name":"Rossford Public Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll25",
+      "secondary_alias":"p15005coll25"
+   },
+   {
+      "alias":"\/p16007coll67",
+      "name":"Rutherford B. Hayes Presidential Library and Museums Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll67",
+      "secondary_alias":"p16007coll67"
+   },
+   {
+      "alias":"\/p16007coll74",
+      "name":"Salem Homestead Journal and Village Register",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll74",
+      "secondary_alias":"p16007coll74"
+   },
+   {
+      "alias":"\/p16007coll5",
+      "name":"Sauder Village Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll5",
+      "secondary_alias":"p16007coll5"
+   },
+   {
+      "alias":"\/p15005coll27",
+      "name":"Seneca County Digital Library",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll27",
+      "secondary_alias":"p15005coll27"
+   },
+   {
+      "alias":"\/p15005coll14",
+      "name":"Serpent Mound Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll14",
+      "secondary_alias":"p15005coll14"
+   },
+   {
+      "alias":"\/p16007coll73",
+      "name":"Shelby County Democrat",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll73",
+      "secondary_alias":"p16007coll73"
+   },
+   {
+      "alias":"\/p16007coll72",
+      "name":"Sisters of Charity of Cincinnati Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll72",
+      "secondary_alias":"p16007coll72"
+   },
+   {
+      "alias":"\/p16007coll46",
+      "name":"Southeast Ohio History Center Digital Collections",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll46",
+      "secondary_alias":"19"
+   },
+   {
+      "alias":"\/p16007coll11",
+      "name":"State Library of Ohio Board Meeting Minutes",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll11",
+      "secondary_alias":"p16007coll11"
+   },
+   {
+      "alias":"\/p16007coll12",
+      "name":"State Library of Ohio Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll12",
+      "secondary_alias":"p16007coll12"
+   },
+   {
+      "alias":"\/p15005coll1",
+      "name":"State Library of Ohio County Atlases",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll1",
+      "secondary_alias":"p15005coll1"
+   },
+   {
+      "alias":"\/p267401ccp2",
+      "name":"State Library of Ohio Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p267401ccp2",
+      "secondary_alias":"p267401ccp2"
+   },
+   {
+      "alias":"\/p15005coll2",
+      "name":"State Library of Ohio Historical Documents",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll2",
+      "secondary_alias":"p15005coll2"
+   },
+   {
+      "alias":"\/p16007coll17",
+      "name":"State Library of Ohio Rare Books",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll17",
+      "secondary_alias":"p16007coll17"
+   },
+   {
+      "alias":"\/p267401cdi",
+      "name":"State Library of Ohio State Hospitals",
+      "path":"\/cdm\/sites\/16007\/data\/p267401cdi",
+      "secondary_alias":"p267401cdi"
+   },
+   {
+      "alias":"\/p16007coll21",
+      "name":"State Library of Ohio World War II Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll21",
+      "secondary_alias":"p16007coll21"
+   },
+   {
+      "alias":"\/p15005coll26",
+      "name":"Swanton Public Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll26",
+      "secondary_alias":"p15005coll26"
+   },
+   {
+      "alias":"\/p16007coll8",
+      "name":"Toledo and Ohio Central Railroad Field Books",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll8",
+      "secondary_alias":"p16007coll8"
+   },
+   {
+      "alias":"\/p16007coll31",
+      "name":"Toledo Lucas County Public Library Community Photo Album",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll31",
+      "secondary_alias":"p16007coll31"
+   },
+   {
+      "alias":"\/p16007coll33",
+      "name":"Toledo Lucas County Public Library Digital Collections",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll33",
+      "secondary_alias":"6"
+   },
+   {
+      "alias":"\/p16007coll77",
+      "name":"Toledo Lucas County Public Library Newspaper Collections",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll77",
+      "secondary_alias":"p16007coll77"
+   },
+   {
+      "alias":"\/p16007coll25",
+      "name":"Treasurer of the State of Ohio Annual Reports",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll25",
+      "secondary_alias":"p16007coll25"
+   },
+   {
+      "alias":"\/p16007coll79",
+      "name":"Trumbull County Historical Society Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll79",
+      "secondary_alias":"p16007coll79"
+   },
+   {
+      "alias":"\/p16007coll54",
+      "name":"Van Wert Times",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll54",
+      "secondary_alias":"27"
+   },
+   {
+      "alias":"\/wadsworth",
+      "name":"Wadsworth Public Library Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/wadsworth",
+      "secondary_alias":"wadsworth"
+   },
+   {
+      "alias":"\/p15005coll15",
+      "name":"Wahkeena Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll15",
+      "secondary_alias":"p15005coll15"
+   },
+   {
+      "alias":"\/p15005coll38",
+      "name":"Way Public Library Digital Archive Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll38",
+      "secondary_alias":"p15005coll38"
+   },
+   {
+      "alias":"\/p16007coll53",
+      "name":"Wayne County Democrat",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll53",
+      "secondary_alias":"26"
+   },
+   {
+      "alias":"\/p16007coll34",
+      "name":"Wayne County, Ohio Through the Years",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll34",
+      "secondary_alias":"7"
+   },
+   {
+      "alias":"\/p15005coll8",
+      "name":"West Jefferson Remembers",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll8",
+      "secondary_alias":"p15005coll8"
+   },
+   {
+      "alias":"\/p15005coll29",
+      "name":"White Castle Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll29",
+      "secondary_alias":"p15005coll29"
+   },
+   {
+      "alias":"\/siebert",
+      "name":"Wilbur H. Siebert Underground Railroad Collection",
+      "path":"\/cdm\/sites\/16007\/data\/siebert",
+      "secondary_alias":"siebert"
+   },
+   {
+      "alias":"\/p16007coll35",
+      "name":"William Jackson Armstrong Manuscript Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll35",
+      "secondary_alias":"8"
+   },
+   {
+      "alias":"\/p15005coll18",
+      "name":"Wood County District Public Library Black Swamp Memories",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll18",
+      "secondary_alias":"p15005coll18"
+   },
+   {
+      "alias":"\/p15005coll7",
+      "name":"Wood County Historical Center and Museum Digital Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll7",
+      "secondary_alias":"p15005coll7"
+   },
+   {
+      "alias":"\/p16007coll38",
+      "name":"Wooster Daily News",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll38",
+      "secondary_alias":"11"
+   },
+   {
+      "alias":"\/p16007coll37",
+      "name":"Wooster Daily Republican",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll37",
+      "secondary_alias":"10"
+   },
+   {
+      "alias":"\/p16007coll51",
+      "name":"World War I in Ohio",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll51",
+      "secondary_alias":"24"
+   },
+   {
+      "alias":"\/p15005coll4",
+      "name":"World War II Oral Histories",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll4",
+      "secondary_alias":"p15005coll4"
+   },
+   {
+      "alias":"\/p16007coll97",
+      "name":"Worthington News",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll97",
+      "secondary_alias":"p16007coll97"
+   },
+   {
+      "alias":"\/p15005coll10",
+      "name":"Youngstown Historical Center of Industry and Labor",
+      "path":"\/cdm\/sites\/16007\/data\/p15005coll10",
+      "secondary_alias":"p15005coll10"
+   },
+   {
+      "alias":"\/p16007coll42",
+      "name":"Zanesville Signal",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll42",
+      "secondary_alias":"15"
+   },
+   {
+      "alias":"\/p16007coll10",
+      "name":"Zoar Collection",
+      "path":"\/cdm\/sites\/16007\/data\/p16007coll10",
+      "secondary_alias":"p16007coll10"
+   }
+];
+
+// create collection options
+$.getJSON( "https://ohiomemory.org/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+    var items = [];
+    $.each( data, function( i, prop ) {
+        items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
+    });
+    $("#selectCollections").html(items.join(""));
+
+    // initialize collections drop-down
+    $('.collectionselectpicker').selectpicker({
+        actionsBox: true,
+        style: 'btn-info',
+        virtualScroll: true
+    });
+});
+
+
+
+// initialize format drop-down
+$('.formatselectpicker').selectpicker({
+    style: 'btn-info',
+    width: '18em',
+    size: 8
+});
+
+//$('.fieldselectpicker').selectpicker();
+
+</script>
