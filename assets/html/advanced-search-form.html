@@ -579,12 +579,34 @@ advancedSearchForm.insertCollectionOptions = function () {
 		});
 	});
 } /* advancedSearchForm.insertCollectionOptions() */
+
 advancedSearchForm.initFormatOptions = function () {
 	// initialize format drop-down
-	$('.formatselectpicker').selectpicker({
-		style: 'btn-info',
-		width: '18em',
-		size: 8
+	//$('.formatselectpicker').selectpicker({
+	//	style: 'btn-info',
+	//	width: '18em',
+	//	size: 8
+	//});
+	
+	// Options are currently hardcoded into the form HTML.
+	// ...
+
+	// http://digital.archives.alabama.gov/digital/api/facet/facetfield/format/mode/all/conn/and
+	$.getJSON( cdmOriginUrl() + "/digital/api/facet/facetfield/format/mode/all/conn/and", function( data ) {
+		var items = [];
+		$.each( data.facets.format, function( i, prop ) {
+			let optionId = prop.title;
+			optionId.replace(/[^A-Za-z0-9_]+/g, "-");
+			items.push( '<option id="' + optionId + '" value="' + prop.title + '">' + prop.title + '</option>' );
+		});
+		$("#selectFormats").html(items.join(""));
+
+		// initialize collections drop-down
+		$('.formatselectpicker').selectpicker({
+			style: 'btn-info',
+			virtualScroll: true
+		});
+		
 	});
 } /* advancedSearchForm.initFormatOptions () */
 
