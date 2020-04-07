@@ -3,7 +3,7 @@
 <head>
 <!-- Advanced Search Form for a Responsive ContentDM Site -->
 <!-- Derived from Ohio Memory Advanced Search Form, https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html -->
-<!-- version: 2020.0306-1012 -->
+<!-- version: 2020.0407-1527 -->
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -38,9 +38,18 @@ function cdmOriginUrl () {
 	return parseUrl(url).origin;
 }
 
+function reqParam ( key ) {
+	let asUrlQuery = window.location.search.substring(1).split("&");
+	let hParam = {}; $.each( asUrlQuery, function (i, pair) { let kv = pair.split("="); hParam[kv[0]] = kv[1] } );
+	
+	return ( ( typeof(key)=='undefined' || key.length==0 ) ? hParam : hParam[key] );
+}
+
 // 
 jQuery(document).ready(function($){
-
+	console.log("advanced-search-form.html", "@version", "2020.0407-1527");
+	
+	// utility functions
     function isValidDate(dateString) {
         var regEx1 = /^\d{4}-\d{2}-\d{2}$/;
         var regEx2 = /^\d{4}-\d{2}$/;
@@ -52,6 +61,14 @@ jQuery(document).ready(function($){
         }
     }
     
+    function makeIsoDate(d) {
+        var dd = "";
+        d.substring(0, 4) !== "" ? dd += d.substring(0, 4) : "";
+        d.substring(4, 6) !== "" ? dd += "-" + d.substring(4, 6) : "";
+        d.substring(6, 8) !== "" ? dd += "-" + d.substring(6, 8) : "";
+        return dd;
+    }
+
     $( "#advSearchForm" ).submit(function(e) {
 
         e.preventDefault();
@@ -115,6 +132,8 @@ jQuery(document).ready(function($){
                 collCriteria = '/collection/' + searchCollectionValues.join("!");
             }
         }
+		console.log("Collections Picker:", $("#selectCollections"), $("#selectCollections").val());
+		console.log("Collections Criteria:", $("#selectCollections").val(), collCriteria);
         /*else {
             $('#restrict_options').text("All formats");
             collCriteria = 'collection/all';
@@ -156,50 +175,42 @@ jQuery(document).ready(function($){
         // e.g https://ohiomemory.org/digital/search/collection/p267401coll32!p16007coll51/searchterm/war!battle!19050101-19191231/field/subjec!all!date/mode/all!all!exact/conn/and!and!and/order/nosort 1905-01-01 1919-12-31
         searchurl += collCriteria + '/' + searchCriteria + '/field/' + fieldvalues.join("!") + '/mode/' + modevalues.join("!") + '/conn/' + connvalues.join("!");
 
-        //if (collCriteria.match('p16007coll22')) {
-
-            window.parent.location.href = searchurl;
-        //}
-
+		console.log("Search URL:", searchurl);
+		
+		if (sessionStorage.getItem('debug-advanced-search-form') == null) {
+			window.parent.location.href = searchurl;
+		} /* if */
     });
 
 
     $( "#addfield" ).click(function(e) {
         e.preventDefault();
-        addLine();
+        advancedSearchForm.addLine();
     });
 
     $('.close').click(function() {
         $(this).parent().parent().parent().remove();
     });
 
-    function makeIsoDate(d) {
-        var dd = "";
-        d.substring(0, 4) !== "" ? dd += d.substring(0, 4) : "";
-        d.substring(4, 6) !== "" ? dd += "-" + d.substring(4, 6) : "";
-        d.substring(6, 8) !== "" ? dd += "-" + d.substring(6, 8) : "";
-        return dd;
-    }
-
     // autofill search form using values from from URL
     // e.g. /customizations/global/pages/advancedsearch_resources/advanced_search.html?p267401coll34!p267401coll32&search/collection/p267401coll34!p267401coll32/searchterm/war!1860-1863/field/subjec!date/mode/all!all/conn/and!and
     
-    //console.log(window.location.search);
-    //console.log(window.location.search.substring(1).split('&search'));
     //if (window.location.search.substring(1) !== 'undefined&' && window.location.search.substring(1) != "") {
-
+	if (typeof(reqParam('lastSearchUrl')) != 'undefined') {
+		sessionStorage.setItem('lastSearchUrl', reqParam('lastSearchUrl'));
+	} /* if */
+	
     if (sessionStorage.getItem('lastSearchUrl') !== null) {
         var ssUrl = sessionStorage.getItem('lastSearchUrl');
 
-        // if coveraa, change to place
+        // if coveraa, change to place 
         //ssUrl = ssUrl.replace(/coveraa/, 'Place');
         //console.log('ssUrl: ' + ssUrl);
         if (ssUrl.match(/\/collection\//) != null) {
-            var collectionString = ssUrl.replace(/^.*?\/collection\/(.*?)\/.*/, '$1');
-            //var lastCollectionSelected = lastCriteriaSelected[0].split("!");
+            var collectionString = ssUrl.replace(/^(.*)\/+collection\/+([^\/]+)(\/.*)?$/, '$2');
             var lastCollectionSelected = collectionString.split("!");
-            //$('.selectpicker').selectpicker('val', lastCollectionSelected);
-            
+
+            console.log("lastCollectionSelected:", lastCollectionSelected);
             $.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
                 var items = [];
                 $.each( data, function( i, prop ) {
@@ -213,13 +224,13 @@ jQuery(document).ready(function($){
                     style: 'btn-info',
                     virtualScroll: true
                 });
+				console.log($('.collectionselectpicker'), lastCollectionSelected);
                 $('.collectionselectpicker').selectpicker('val', lastCollectionSelected);
             });
 
             
         }
-        //console.log(sessionStorage);
-        //console.log(lastCriteriaSelected[1]);
+
         // replaced lastCriteriaSelected[1] with ssURL
         //if ( ssURL.includes('searchterm') ) {
 
@@ -283,7 +294,7 @@ jQuery(document).ready(function($){
             
             $("select[name='conn']").val(conns[0]);
 
-            // need to addline() for each term after first
+            // need to advancedSearchForm.addLine() for each term after first
             if (terms.length > 1) {
                 for (i = 1; i < terms.length; i++) {
                     if (modes[i].length < 3 || modes[i].length > 5) { modes[i] = "all"; }
@@ -316,36 +327,10 @@ jQuery(document).ready(function($){
                         $("select[name='field']").val(fields[i]);
                         continue;   
                     }*/
-                    addLine(terms[i], modes[i], fields[i], conns[i]); 
+                    advancedSearchForm.addLine(terms[i], modes[i], fields[i], conns[i]); 
                 }
             }
         //}
-    }
-
-    function addLine(sterm, mode, field, conn) {
-        
-        (typeof sterm == "undefined" || sterm == "") ? sterm = "" : sterm = sterm;
-        (typeof mode == "undefined" || mode == "") ? mode = "all" : mode = mode;
-        (typeof field == "undefined" || field == "") ? field = "all" : field = field;
-        (typeof conn == "undefined" || conn == "") ? conn = "and" : conn = conn;
-        
-        var newLine = $(".adv_search_row:last").clone(true, true);
-        $( "#adv_search_query_builder_list" ).append( newLine );
-        var newInput = newLine.find("input");
-        var newSelects = newLine.find("select");
-        
-        if ( decodeURI(sterm).match(/near5/) ) {
-            var unencodedTermsString = decodeURI(sterm).replace(/' '/g, '');
-            var termsArray = unencodedTermsString.split('near5');
-            sterm = termsArray.join(" ");
-            $(newSelects[0]).children().last().attr('selected', 'selected');
-        }  else {
-            $(newSelects[0]).val(mode);
-        }
-        
-        newInput.val(sterm);
-        $(newSelects[1]).val(field);
-        $(newSelects[2]).val(conn);
     }
 
 });
@@ -610,7 +595,31 @@ advancedSearchForm.initFormatOptions = function () {
 	});
 } /* advancedSearchForm.initFormatOptions () */
 
-//$('.fieldselectpicker').selectpicker();
+advancedSearchForm.addLine = function (sterm, mode, field, conn) {
+        
+	(typeof sterm == "undefined" || sterm == "") ? sterm = "" : sterm = sterm;
+	(typeof mode == "undefined" || mode == "") ? mode = "all" : mode = mode;
+	(typeof field == "undefined" || field == "") ? field = "all" : field = field;
+	(typeof conn == "undefined" || conn == "") ? conn = "and" : conn = conn;
+	
+	var newLine = $(".adv_search_row:last").clone(true, true);
+	$( "#adv_search_query_builder_list" ).append( newLine );
+	var newInput = newLine.find("input");
+	var newSelects = newLine.find("select");
+	
+	if ( decodeURI(sterm).match(/near5/) ) {
+		var unencodedTermsString = decodeURI(sterm).replace(/' '/g, '');
+		var termsArray = unencodedTermsString.split('near5');
+		sterm = termsArray.join(" ");
+		$(newSelects[0]).children().last().attr('selected', 'selected');
+	}  else {
+		$(newSelects[0]).val(mode);
+	}
+	
+	newInput.val(sterm);
+	$(newSelects[1]).val(field);
+	$(newSelects[2]).val(conn);
+} /* advancedSearchForm.addLine() */
 
 advancedSearchForm.init();
 </script>

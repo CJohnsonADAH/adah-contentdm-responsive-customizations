@@ -555,8 +555,13 @@ var adahCDMPageMenu = null;
 		
 	for (var i = 0; i < retrieveMenuObjects.length; i++) {
 		for (var j = 0; j < retrieveMenuEvents.length; j++) {
+			// custom menus
 			let retrieveMenuEvent = retrieveMenuObjects[i] + ':' + retrieveMenuEvents[j];
 			document.addEventListener(retrieveMenuEvent, adahCDMPageMenuLoader);
+			
+			// advanced search page
+			document.addEventListener(retrieveMenuEvent, function(e) { setupAdvancedModal(e.detail.collectionId, e.target.URL);	});
+
 		} /* for */
 	} /* for */
 	
@@ -564,5 +569,60 @@ var adahCDMPageMenu = null;
 	document.addEventListener('cdm-advanced-search-page:update', adahCDMAdvancedSearchPage)
 	
 	document.addEventListener('cdm-app:ready', function (e) { /*NOOP*/ });
-	
+
+	// advanced search window
+	function setupAdvancedModal(coll, urlstring) {
+		if ( urlstring.indexOf("searchterm") > -1 ) {
+			sessionStorage.setItem('lastSearchUrl', urlstring);
+		} else if (typeof(coll) != 'undefined') {
+			sessionStorage.removeItem('lastSearchUrl');
+			sessionStorage.setItem('lastSearchUrl', urlstring);
+		}
+
+		ScriptLoader('https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js', function(){
+			console.log("link: ", document.getElementsByClassName("SimpleSearch-headerAdvancedSearchButtonLink")[0]);
+			
+			var urlpath = urlstring.replace(/^.*?digital\//, '');
+			if (document.getElementsByClassName("advanced-modal").length > 0) { 
+				document.getElementsByClassName("advanced-modal")[0].parentNode.removeChild( document.getElementsByClassName("advanced-modal")[0] ); 
+			}
+			var advSearchContent = new tingle.modal( {cssClass: ['advanced-modal'] });
+		    var advLink = document.querySelector('.SimpleSearch-headerAdvancedSearchButtonLink');
+		    advLink.addEventListener('click', function(){
+		        advSearchContent.open(); 
+		    });
+			
+			// http://digital.archives.alabama.gov/customizations/global/pages/assets/html/advanced-search-form.html
+		    advSearchContent.setContent('<iframe id="advSearchFrame" src="/customizations/global/pages/assets/html/advanced-search-form.html?' + coll + '&' + urlpath + '" width="100%" height="540px" scrolling="yes" frameBorder="0" style="border:none;"></iframe>'); 
+			document.getElementsByClassName("SimpleSearch-headerAdvancedSearchButtonLink")[0].addEventListener("click", function(e){
+				e.stopPropagation();
+				e.preventDefault();
+			});
+		});
+	}
+
 })();
+
+
+
+function ScriptLoader(url, callback){
+	console.log("ScriptLoader:", url, callback);
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    if (script.readyState){ //IE
+        script.onreadystatechange = function() {
+            if (script.readyState == "complete") {
+                script.onreadystatechange = null;
+                callback();
+            }
+        };
+    } else { //Others
+		console.log("script.onload", callback);
+        script.onload = function(){
+            callback();
+        };
+    }
+    script.src = url;
+	document.getElementsByTagName("head")[0].appendChild(script);
+ 
+}
