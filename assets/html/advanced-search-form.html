@@ -231,27 +231,30 @@ jQuery(document).ready(function($){
             
         }
 
-        // replaced lastCriteriaSelected[1] with ssURL
-        //if ( ssURL.includes('searchterm') ) {
+		if (ssUrl.match(/\/searchterm\//) != null) {
 
             // search terms
             //var termString = ssURL.replace(/^.*?searchterm\/(.*?)(\/.*|$)/, '$1');
-            var termString = ssUrl.replace(/^.*?searchterm\/(.*?)(\/.*|$)/, '$1');
-            var terms = termString.split("!");
+			var parts = ['searchterm', 'field', 'mode', 'conn'];
+			var searchOps = {}
+			for (let param of parts) {
+				pattern = new RegExp('(^|/)(' + param + ')/+([^/]+)');
+				
+				var urlParamRef;
+				if (urlParamRef = ssUrl.match(pattern)) {
+					searchOps[param]=urlParamRef[3].split("!");
+				}
+				
+			} /* for */
+			
+            var terms = searchOps['searchterm']; // term
             var formatValues = ["picture", "objects", "books", "manuscripts", "newspapers", "government", "sound", "video"];
+			var fields = searchOps['field']; // field
+			var modes = searchOps['mode']; // mode
+			var conns = searchOps['conn']; // connector
 
-            // fields
-            var fieldString = ssUrl.replace(/^.*?\/field\/(.*?)\/.*/, '$1');
-            var fields = fieldString.split("!");
-
-            // mode
-            var modeString = ssUrl.replace(/^.*?\/mode\/(.*?)\/.*/, '$1');
-            var modes = modeString.split("!");
-
-            // connector
-            var connString = ssUrl.replace(/^.*?\/conn\/(.*?)(\/|$)/, '$1');
-            var conns = connString.split("!");
-
+			/*DBG*/ console.log("url", ssUrl, "terms", terms, "fields", fields, "modes", modes, "conns", conns);
+			
             // dates
             var dates = [];
             if (fields[0] == "date" || fields[0] == "search") {
@@ -330,7 +333,7 @@ jQuery(document).ready(function($){
                     advancedSearchForm.addLine(terms[i], modes[i], fields[i], conns[i]); 
                 }
             }
-        //}
+        }
     }
 
 });
