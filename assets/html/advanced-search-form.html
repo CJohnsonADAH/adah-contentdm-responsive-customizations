@@ -21,6 +21,24 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.7.3/js/bootstrap-select.min.js?ver=4.9.8" type="text/javascript"></script>
 
 <script type="text/javascript">
+//<![CDATA[
+var defaultFields = {
+"all": {name: "All fields", nick: "all", type: "TEXT"},
+"title": {name: "Title", nick: "title", type: "TEXT"},
+"creato": {name: "Creator", nick: "creato", type: "TEXT"},
+"subjec": {name: "Subject", nick: "subjec", type: "TEXT"},
+"descri": {name: "Description", nick: "descri", type: "TEXT"},
+"relatig": {name: "Collection", nick: "relatig", type: "TEXT"},
+"contri": {name: "Contributor", nick: "contri", type: "TEXT"},
+"time": {name: "Time Period", nick: "time", type: "TEXT"},
+"date": {name: "Date of Original", nick: "date", type: "DATE"},
+"format": {name: "Format", nick: "format", type: "TEXT"},
+"identi": {name: "Identifier", nick: "identi", type: "TEXT"},
+"source": {name: "Source", nick: "source", type: "TEXT"},
+"extent": {name: "Extent", nick: "extent", type: "TEXT"}
+};
+//]>
+
 // from: https://stackoverflow.com/questions/6644654/parse-an-url-in-javascript
 /**
  * @param string url
@@ -67,14 +85,6 @@ jQuery(document).ready(function($){
         }
     }
     
-    function makeIsoDate(d) {
-        var dd = "";
-        d.substring(0, 4) !== "" ? dd += d.substring(0, 4) : "";
-        d.substring(4, 6) !== "" ? dd += "-" + d.substring(4, 6) : "";
-        d.substring(6, 8) !== "" ? dd += "-" + d.substring(6, 8) : "";
-        return dd;
-    }
-
     $( "#advSearchForm" ).submit(function(e) {
 
         e.preventDefault();
@@ -138,8 +148,10 @@ jQuery(document).ready(function($){
                 collCriteria = '/collection/' + searchCollectionValues.join("!");
             }
         }
-		console.log("Collections Picker:", $("#selectCollections"), $("#selectCollections").val());
-		console.log("Collections Criteria:", $("#selectCollections").val(), collCriteria);
+		if (advancedSearchForm.debugging()) {
+			console.log("Collections Picker:", $("#selectCollections"), $("#selectCollections").val());
+			console.log("Collections Criteria:", $("#selectCollections").val(), collCriteria);
+		}
         /*else {
             $('#restrict_options').text("All formats");
             collCriteria = 'collection/all';
@@ -183,7 +195,7 @@ jQuery(document).ready(function($){
 
 		console.log("Search URL:", searchurl);
 		
-		if (sessionStorage.getItem('debug-advanced-search-form') == null) {
+		if (sessionStorage.getItem('debug-advanced-search-form') != "halt") {
 			window.parent.location.href = searchurl;
 		} /* if */
     });
@@ -208,135 +220,11 @@ jQuery(document).ready(function($){
 	
     if (sessionStorage.getItem('lastSearchUrl') !== null) {
         var ssUrl = sessionStorage.getItem('lastSearchUrl');
-
+		var ref;
         // if coveraa, change to place 
         //ssUrl = ssUrl.replace(/coveraa/, 'Place');
-        //console.log('ssUrl: ' + ssUrl);
-        if (ssUrl.match(/\/collection\//) != null) {
-            var collectionString = ssUrl.replace(/^(.*)\/+collection\/+([^\/]+)(\/.*)?$/, '$2');
-            var lastCollectionSelected = collectionString.split("!");
-
-            console.log("lastCollectionSelected:", lastCollectionSelected);
-            $.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
-                var items = [];
-                $.each( data, function( i, prop ) {
-                    items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
-                });
-                $("#selectCollections").html(items.join(""));
-
-                // initialize collections drop-down
-                $('.collectionselectpicker').selectpicker({
-                    actionsBox: true,
-                    style: 'btn-info',
-                    virtualScroll: true
-                });
-				console.log($('.collectionselectpicker'), lastCollectionSelected);
-                $('.collectionselectpicker').selectpicker('val', lastCollectionSelected);
-            });
-
-            
-        }
-
-		if (ssUrl.match(/\/searchterm\//) != null) {
-
-            // search terms
-            //var termString = ssURL.replace(/^.*?searchterm\/(.*?)(\/.*|$)/, '$1');
-			var parts = ['searchterm', 'field', 'mode', 'conn'];
-			var searchOps = {}
-			for (let param of parts) {
-				var rematch;
-				if (rematch = ssUrl.hasUrlParameter(param)) {
-					searchOps[param]=rematch[4].split("!");
-				}				
-			} /* for */
-			
-            var terms = searchOps['searchterm']; // term
-            var formatValues = ["picture", "objects", "books", "manuscripts", "newspapers", "government", "sound", "video"];
-			var fields = searchOps['field']; // field
-			var modes = searchOps['mode']; // mode
-			var conns = searchOps['conn']; // connector
-
-			/*DBG*/ console.log("url", ssUrl, "terms", terms, "fields", fields, "modes", modes, "conns", conns);
-			
-            // dates
-            var dates = [];
-            if (fields[0] == "date" || fields[0] == "search") {
-                dates = terms[0].split("-");
-                $('#firstDateField').val(makeIsoDate(dates[0]));
-                $('#secondDateField').val(makeIsoDate(dates[1]));
-            }
-            
-            if (fields[0] == "Place" || fields[0] == "coveraa") {
-                fields[0] = "coveraa";
-                //$('#mode option[class="coveraa"]').attr('selected', 'selected');
-            }
-            //$('.fieldselectpicker').selectpicker('val', fields[0]);
-            /*if (fields[0] == "time" || fields[0] == "coverab") {
-                fields[0] = "coverab";
-            }*/
-
-            if (modes[0].length < 3 || modes[0].length > 5) { modes[0] = "all"; }
-            if (fields[0].length < 4 || fields[0].length > 7) { fields[0] = "all"; }
-            if (conns[0].length < 2 || conns[0].length > 3) { conns[0] = "and"; }
-            if (fields[0] == "format" && formatValues.indexOf(decodeURI(terms[0]).split(" ")[0]) > -1) {
-                var lastFormatsSelected = decodeURI(terms[0]).split(" ");
-                $('.formatselectpicker').selectpicker();
-                $('.formatselectpicker').selectpicker('val', lastFormatsSelected);
-            } else {
-                $("select[name='field']").val(fields[0]);
-            }
-            if ( decodeURI(terms[0]).match(/near5/) ) {
-                var unencodedTermsString = decodeURI(terms[0]).replace(/' '/g, '');
-                var termsArray = unencodedTermsString.split('near5');
-                terms[0] = termsArray.join(" ");
-                //console.log($('#mode option[class="near"]'));
-                $('#mode option[class="near"]').attr('selected', 'selected');
-            } else {
-                $("select[name='mode']").val(modes[0]);
-            }
-            if (!decodeURI(terms[0]).match( /(\d\d\d\d.*\d\d|\d\d\d\d)/mg ) ) {
-                $("input[name='searchterm']").val( decodeURI(terms[0]) );
-            } 
-            
-            $("select[name='conn']").val(conns[0]);
-
-            // need to advancedSearchForm.addLine() for each term after first
-            if (terms.length > 1) {
-                for (i = 1; i < terms.length; i++) {
-                    if (modes[i].length < 3 || modes[i].length > 5) { modes[i] = "all"; }
-                    if (fields[i].length < 4 || fields[i].length > 7) { fields[i] = "all"; }
-                    if (conns[i].length < 2 || conns[i].length > 3) { conns[i] = "and"; }
-                    if (fields[i] == "date" || fields[i] == "search") {
-                        dates = terms[i].split("-");
-                        $('#firstDateField').val(makeIsoDate(dates[0]));
-                        $('#secondDateField').val(makeIsoDate(dates[1]));
-                        continue;
-                    }
-                    if (fields[i] == "Place" || fields[i] == "coveraa") {
-                        fields[i] = "coveraa";
-                    }
-                    //$('.fieldselectpicker').selectpicker('val', fields[0]);
-                    if (fields[i] == "format" && formatValues.indexOf(decodeURI(terms[i]).split(" ")[0]) > -1) {
-                        var lastFormatsSelected = decodeURI(terms[i]).split(" ");
-                        $('.formatselectpicker').selectpicker();
-                        $('.formatselectpicker').selectpicker('val', lastFormatsSelected);
-                        continue;
-                    } 
-                    //$("select[name='field']").val(fields[i]);
-                    //$("select[name='field']")[i].value = fields[i];
-                    /*console.log(i);
-                    console.log(document.querySelectorAll('#field')[i]);
-                    console.log(fields[i]);
-                    document.querySelectorAll('#field')[i] = fields[i];
-*/
-                    /*else {
-                        $("select[name='field']").val(fields[i]);
-                        continue;   
-                    }*/
-                    advancedSearchForm.addLine(terms[i], modes[i], fields[i], conns[i]); 
-                }
-            }
-        }
+		advancedSearchForm.populateCollectionFromURL();
+		advancedSearchForm.populateSearchBoxesFromURL();
     }
 
 });
@@ -385,39 +273,6 @@ jQuery(document).ready(function($){
                                                     </option>
                                                     <option class="title" value="title">
                                                         Title
-                                                    </option>
-                                                    <option class="creato" value="creato">
-                                                        Creator
-                                                    </option>
-                                                    <option class="subjec" value="subjec">
-                                                        Subject
-                                                    </option>
-                                                    <option class="coveraa" value="coveraa">
-                                                        Place
-                                                    </option>
-                                                    <option class="descri" value="descri">
-                                                        Description
-                                                    </option>
-                                                    <option class="contri" value="relatig">
-                                                        Collection
-                                                    </option>
-                                                    <option class="contri" value="contri">
-                                                        Contributor
-                                                    </option>
-                                                    <option class="date" value="date">
-                                                        Date of Original
-                                                    </option>
-                                                    <option class="format" value="format">
-                                                        Format
-                                                    </option>
-                                                    <option class="identi" value="identi">
-                                                        Identifier
-                                                    </option>
-                                                    <option class="source" value="source">
-                                                        Source
-                                                    </option>
-                                                    <option class="extent" value="extent">
-                                                        Extent
                                                     </option>
                                                 </select>
                                             
@@ -523,8 +378,17 @@ jQuery(document).ready(function($){
 <script>
 
 var advancedSearchForm = {};
+advancedSearchForm.makeIsoDate = function (d) {
+	var dd = "";
+	d.substring(0, 4) !== "" ? dd += d.substring(0, 4) : "";
+	d.substring(4, 6) !== "" ? dd += "-" + d.substring(4, 6) : "";
+	d.substring(6, 8) !== "" ? dd += "-" + d.substring(6, 8) : "";
+	return dd;
+}
+
 advancedSearchForm.init = function () {
-	this.insertCollectionOptions();
+	var self = this;
+	this.insertCollectionOptions().then( function () { console.log("self", self); self.initFieldOptions(); } );
 	this.initFormatOptions();
 }
 
@@ -555,7 +419,7 @@ advancedSearchForm.insertCollectionOptions = function () {
  * ]
  */
 	// create collection options
-	$.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+	return $.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
 		var items = [];
 		$.each( data, function( i, prop ) {
 			items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
@@ -568,7 +432,8 @@ advancedSearchForm.insertCollectionOptions = function () {
 			style: 'btn-info',
 			virtualScroll: true
 		});
-	});
+	}).promise();
+	
 } /* advancedSearchForm.insertCollectionOptions() */
 
 advancedSearchForm.initFormatOptions = function () {
@@ -583,7 +448,7 @@ advancedSearchForm.initFormatOptions = function () {
 	// ...
 
 	// http://digital.archives.alabama.gov/digital/api/facet/facetfield/format/mode/all/conn/and
-	$.getJSON( cdmOriginUrl() + "/digital/api/facet/facetfield/format/mode/all/conn/and", function( data ) {
+	return $.getJSON( cdmOriginUrl() + "/digital/api/facet/facetfield/format/mode/all/conn/and", function( data ) {
 		var items = [];
 		$.each( data.facets.format, function( i, prop ) {
 			let optionId = prop.title;
@@ -598,8 +463,36 @@ advancedSearchForm.initFormatOptions = function () {
 			virtualScroll: true
 		});
 		
-	});
+	}).promise();
+	
 } /* advancedSearchForm.initFormatOptions () */
+
+advancedSearchForm.initFieldOptions = function () {
+	let collAliases = $("#selectCollections").find('option').map( function () { return $(this).prop('value'); } ).get();
+	console.log("collAliases", collAliases);
+	for (var i = 0; i<1; i++) {
+		$.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionFieldInfo/" + collAliases[i] + "/json", function( data ) {
+			console.log(this, data);
+		});
+	}
+	$('select[name=field]').html(advancedSearchForm.generateSelectOptions(defaultFields));
+}
+
+advancedSearchForm.generateSelectOption = function (opt) {
+	var elOpt = $('<option></option>')
+		.prop('class', opt.nick).prop('value', opt.nick)
+		.text(opt.name);
+	return elOpt[0].outerHTML;
+}
+
+advancedSearchForm.generateSelectOptions = function (map) {
+	let opts = [];
+	for (let x of Object.keys(map)) {
+		opts.push( this.generateSelectOption(map[x]) );
+	}
+	console.log(opts);
+	return opts.join("\n");
+}
 
 advancedSearchForm.addLine = function (sterm, mode, field, conn) {
         
@@ -627,5 +520,165 @@ advancedSearchForm.addLine = function (sterm, mode, field, conn) {
 	$(newSelects[2]).val(conn);
 } /* advancedSearchForm.addLine() */
 
+advancedSearchForm.lastSearchURL = function () {
+	return sessionStorage.getItem('lastSearchUrl');
+}
+
+advancedSearchForm.debugging = function (value) {
+	var match = false;
+	var dbg = sessionStorage.getItem('debug-advanced-search-form');
+	
+	if (typeof(value) == 'undefined') value=/.*/;
+	match = (!(dbg==null) && dbg.match(/.*/));
+	return match;
+}
+
+advancedSearchForm.populateCollectionFromURL = function () {
+	var ssUrl = advancedSearchForm.lastSearchURL();
+	if (ref = ssUrl.hasUrlParameter('collection')) {
+		var collectionString = ref[4];
+		var lastCollectionSelected = collectionString.split("!");
+
+		if (advancedSearchForm.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
+		
+		$.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
+                var items = [];
+                $.each( data, function( i, prop ) {
+                    items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
+                });
+                $("#selectCollections").html(items.join(""));
+
+                // initialize collections drop-down
+                $('.collectionselectpicker').selectpicker({
+                    actionsBox: true,
+                    style: 'btn-info',
+                    virtualScroll: true
+                });
+				console.log($('.collectionselectpicker'), lastCollectionSelected);
+                $('.collectionselectpicker').selectpicker('val', lastCollectionSelected);
+		}); /* $.getJSON */
+	} /* if */
+} /* advancedSearchForm.populateCollectionFromURL() */
+
+advancedSearchForm.populateSearchBoxesFromURL = function () {
+	var ssUrl = advancedSearchForm.lastSearchURL();
+	if (ref = ssUrl.hasUrlParameter('searchterm')) {
+
+		// search terms
+		var parts = ['searchterm', 'field', 'mode', 'conn'];
+		var searchOps = {}
+		for (let param of parts) {
+			var rematch;
+			if (rematch = ssUrl.hasUrlParameter(param)) {
+				searchOps[param]=rematch[4].split("!");
+			}				
+		} /* for */
+		
+		var terms = searchOps['searchterm']; // term
+		var formatValues = ["picture", "objects", "books", "manuscripts", "newspapers", "government", "sound", "video"];
+		var fields = searchOps['field']; // field
+		var modes = searchOps['mode']; // mode
+		var conns = searchOps['conn']; // connector
+
+		if (sessionStorage.getItem('debug-advanced-search-form') != null) {
+			console.log("url", ssUrl, "terms", terms, "fields", fields, "modes", modes, "conns", conns);
+		}
+		
+		// dates
+		var dates = []; var cut = [];
+		for (let i = 0; i < fields.length; i++) {
+			if (fields[i].match(/^(date)$/)) {
+				dates = terms[i].split("-");
+
+				if (advancedSearchForm.debugging()) console.log("dates", dates, $("firstDateField"), $("#secondDateField"));
+				$('#firstDateField').val(advancedSearchForm.makeIsoDate(dates[0]));
+				$('#secondDateField').val(advancedSearchForm.makeIsoDate(dates[1]));
+				
+				cut[cut.length] = i;
+			}			
+		} /* for */
+		
+		/*if (fields[0].match(/(date|time)/fields[0] == "date" || fields[0] == "search") {
+			dates = terms[0].split("-");
+			if (advancedSearchForm.debugging()) { console.log("dates", dates, $("firstDateField"), $("#secondDateField")); }
+			$('#firstDateField').val(advancedSearchForm.makeIsoDate(dates[0]));
+			$('#secondDateField').val(advancedSearchForm.makeIsoDate(dates[1]));
+		}*/
+		
+		if (fields[0] == "Place" || fields[0] == "coveraa") {
+			fields[0] = "coveraa";
+			//$('#mode option[class="coveraa"]').attr('selected', 'selected');
+		}
+		//$('.fieldselectpicker').selectpicker('val', fields[0]);
+		/*if (fields[0] == "time" || fields[0] == "coverab") {
+			fields[0] = "coverab";
+		}*/
+
+		if (modes[0].length < 3 || modes[0].length > 5) { modes[0] = "all"; }
+		if (fields[0].length < 4 || fields[0].length > 7) { fields[0] = "all"; }
+		if (conns[0].length < 2 || conns[0].length > 3) { conns[0] = "and"; }
+		
+		if (fields[0] == "format" && formatValues.indexOf(decodeURI(terms[0]).split(" ")[0]) > -1) {
+			var lastFormatsSelected = decodeURI(terms[0]).split(" ");
+			$('.formatselectpicker').selectpicker();
+			$('.formatselectpicker').selectpicker('val', lastFormatsSelected);
+		} else {
+			$("select[name='field']").val(fields[0]);
+		}
+		if ( decodeURI(terms[0]).match(/near5/) ) {
+			var unencodedTermsString = decodeURI(terms[0]).replace(/' '/g, '');
+			var termsArray = unencodedTermsString.split('near5');
+			terms[0] = termsArray.join(" ");
+			//console.log($('#mode option[class="near"]'));
+			$('#mode option[class="near"]').attr('selected', 'selected');
+		} else {
+			$("select[name='mode']").val(modes[0]);
+		}
+		//if (!decodeURI(terms[0]).match( /(\d\d\d\d.*\d\d|\d\d\d\d)/mg ) ) {
+			$("input[name='searchterm']").val( decodeURI(terms[0]) );
+		//} 
+		
+		$("select[name='conn']").val(conns[0]);
+
+		// need to advancedSearchForm.addLine() for each term after first
+		if (terms.length > 1) {
+			for (i = 1; i < terms.length; i++) {
+				if (modes[i].length < 3 || modes[i].length > 5) { modes[i] = "all"; }
+				if (fields[i].length < 4 || fields[i].length > 7) { fields[i] = "all"; }
+				if (conns[i].length < 2 || conns[i].length > 3) { conns[i] = "and"; }
+				if (fields[i] == "date" || fields[i] == "search") {
+					dates = terms[i].split("-");
+					$('#firstDateField').val(advancedSearchForm.makeIsoDate(dates[0]));
+					$('#secondDateField').val(advancedSearchForm.makeIsoDate(dates[1]));
+					continue;
+				}
+				if (fields[i] == "Place" || fields[i] == "coveraa") {
+					fields[i] = "coveraa";
+				}
+				//$('.fieldselectpicker').selectpicker('val', fields[0]);
+				if (fields[i] == "format" && formatValues.indexOf(decodeURI(terms[i]).split(" ")[0]) > -1) {
+					var lastFormatsSelected = decodeURI(terms[i]).split(" ");
+					$('.formatselectpicker').selectpicker();
+					$('.formatselectpicker').selectpicker('val', lastFormatsSelected);
+					continue;
+				} 
+				//$("select[name='field']").val(fields[i]);
+				//$("select[name='field']")[i].value = fields[i];
+				/*console.log(i);
+				console.log(document.querySelectorAll('#field')[i]);
+				console.log(fields[i]);
+				document.querySelectorAll('#field')[i] = fields[i];
+*/
+				/*else {
+					$("select[name='field']").val(fields[i]);
+					continue;   
+				}*/
+				advancedSearchForm.addLine(terms[i], modes[i], fields[i], conns[i]); 
+			}
+		}
+	}
+}
+
 advancedSearchForm.init();
+
 </script>
