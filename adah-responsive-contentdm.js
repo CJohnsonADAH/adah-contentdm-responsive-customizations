@@ -572,13 +572,14 @@ var adahCDMPageMenu = null;
 
 	// advanced search window
 	function setupAdvancedModal(coll, urlstring) {
-		if ( urlstring.indexOf("searchterm") > -1 ) {
-			sessionStorage.setItem('lastSearchUrl', urlstring);
-		} else if (typeof(coll) != 'undefined') {
+		let ref = urlstring.hasUrlParameter('id');
+		if (!ref) {
 			sessionStorage.removeItem('lastSearchUrl');
 			sessionStorage.setItem('lastSearchUrl', urlstring);
-		}
-
+		} else {
+			console.log("Viewing a record: ", ref);
+		} /* if */
+		
 		ScriptLoader('https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js', function(){
 			console.log("link: ", document.getElementsByClassName("SimpleSearch-headerAdvancedSearchButtonLink")[0]);
 			
@@ -594,6 +595,7 @@ var adahCDMPageMenu = null;
 			
 			// http://digital.archives.alabama.gov/customizations/global/pages/assets/html/advanced-search-form.html
 		    advSearchContent.setContent('<iframe id="advSearchFrame" src="/customizations/global/pages/assets/html/advanced-search-form.html?' + coll + '&' + urlpath + '" width="100%" height="540px" scrolling="yes" frameBorder="0" style="border:none;"></iframe>'); 
+
 			document.getElementsByClassName("SimpleSearch-headerAdvancedSearchButtonLink")[0].addEventListener("click", function(e){
 				e.stopPropagation();
 				e.preventDefault();
@@ -603,7 +605,10 @@ var adahCDMPageMenu = null;
 
 })();
 
-
+String.prototype.hasUrlParameter = function (name) {
+	var re = new RegExp('(^|/)(' + name + ')(/+([^/]+))?(/|$)');
+	return this.toString().match(re);
+}
 
 function ScriptLoader(url, callback){
 	console.log("ScriptLoader:", url, callback);

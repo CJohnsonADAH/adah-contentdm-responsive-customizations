@@ -3,7 +3,8 @@
 <head>
 <!-- Advanced Search Form for a Responsive ContentDM Site -->
 <!-- Derived from Ohio Memory Advanced Search Form, https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html -->
-<!-- version: 2020.0407-1527 -->
+<meta name="author" content="C. Johnson" />
+<meta name="version" content="2020.0430-0905" />
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -26,16 +27,21 @@
  * @return Location an object containing the parsed-out components of the URL
  * 		(e.g.: u.href, u.protocol, u.host, u.pathname, u.search, u.hash, u.origin, ...)
  */
-function parseUrl ( url ) {
+String.prototype.parseUrl = function () {
 	let a = document.createElement('a');
-	a.href = url;
+	a.href = this.toString();
 	return a;
 } /* parseUrl() */
+
+String.prototype.hasUrlParameter = function (name) {
+	var re = new RegExp('(^|/)(' + name + ')(/+([^/]+))?(/|$)');
+	return this.toString().match(re);
+}
 
 function cdmOriginUrl () {
 	let base = jQuery('base');
 	let url = (base.length > 0 ? base.attr('href') : window.location.href);
-	return parseUrl(url).origin;
+	return url.parseUrl().origin;
 }
 
 function reqParam ( key ) {
@@ -47,7 +53,7 @@ function reqParam ( key ) {
 
 // 
 jQuery(document).ready(function($){
-	console.log("advanced-search-form.html", "@version", "2020.0407-1527");
+	console.log("advanced-search-form.html", "@version", $('meta[name=version]').prop('content'));
 	
 	// utility functions
     function isValidDate(dateString) {
@@ -238,13 +244,10 @@ jQuery(document).ready(function($){
 			var parts = ['searchterm', 'field', 'mode', 'conn'];
 			var searchOps = {}
 			for (let param of parts) {
-				pattern = new RegExp('(^|/)(' + param + ')/+([^/]+)');
-				
-				var urlParamRef;
-				if (urlParamRef = ssUrl.match(pattern)) {
-					searchOps[param]=urlParamRef[3].split("!");
-				}
-				
+				var rematch;
+				if (rematch = ssUrl.hasUrlParameter(param)) {
+					searchOps[param]=rematch[4].split("!");
+				}				
 			} /* for */
 			
             var terms = searchOps['searchterm']; // term
