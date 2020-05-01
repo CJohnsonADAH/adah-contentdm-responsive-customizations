@@ -4,7 +4,7 @@
 <!-- Advanced Search Form for a Responsive ContentDM Site -->
 <!-- Derived from Ohio Memory Advanced Search Form, https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html -->
 <meta name="author" content="C. Johnson" />
-<meta name="version" content="2020.0430-0905" />
+<meta name="version" content="2020.0501-1333" />
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -22,21 +22,29 @@
 
 <script type="text/javascript">
 //<![CDATA[
-var defaultFields = {
-"all": {name: "All fields", nick: "all", type: "TEXT"},
-"title": {name: "Title", nick: "title", type: "TEXT"},
-"creato": {name: "Creator", nick: "creato", type: "TEXT"},
-"subjec": {name: "Subject", nick: "subjec", type: "TEXT"},
-"descri": {name: "Description", nick: "descri", type: "TEXT"},
-"relatig": {name: "Collection", nick: "relatig", type: "TEXT"},
-"contri": {name: "Contributor", nick: "contri", type: "TEXT"},
-"time": {name: "Time Period", nick: "time", type: "TEXT"},
-"date": {name: "Date of Original", nick: "date", type: "DATE"},
-"format": {name: "Format", nick: "format", type: "TEXT"},
-"identi": {name: "Identifier", nick: "identi", type: "TEXT"},
-"source": {name: "Source", nick: "source", type: "TEXT"},
-"extent": {name: "Extent", nick: "extent", type: "TEXT"}
+var searchFields = {
+	"default": {
+		"all": {name: "All fields", nick: "all", type: "TEXT"},
+		"title": {name: "Title", nick: "title", type: "TEXT"},
+		"creato": {name: "Creator", nick: "creato", type: "TEXT"},
+		"subjec": {name: "Subject", nick: "subjec", type: "TEXT"},
+		"descri": {name: "Description", nick: "descri", type: "TEXT"},
+		"relatig": {name: "Collection", nick: "relatig", type: "TEXT"},
+	},
+
+	"hidden": {
+		"*": ["contac", "find", "fullrs"]
+	}
 };
+// trimmed these out, at least for the time being
+// "contri": {name: "Contributor", nick: "contri", type: "TEXT"},
+// "time": {name: "Time Period", nick: "time", type: "TEXT"},
+// "date": {name: "Date of Original", nick: "date", type: "DATE"},
+// "format": {name: "Format", nick: "format", type: "TEXT"},
+// "identi": {name: "Identifier", nick: "identi", type: "TEXT"},
+// "source": {name: "Source", nick: "source", type: "TEXT"},
+// "extent": {name: "Extent", nick: "extent", type: "TEXT"}
+
 //]>
 
 // from: https://stackoverflow.com/questions/6644654/parse-an-url-in-javascript
@@ -177,7 +185,8 @@ jQuery(document).ready(function($){
         if ( isValidDate($("#firstDateField").val()) && isValidDate($("#secondDateField").val()) ) {
             searchtermvalues.push($("#firstDateField").val().replace(/-/g, '') + "-" + $("#secondDateField").val().replace(/-/g, ''));
             //if (searchCollectionValues.length > 1) { fieldvalues.push("date"); } else { fieldvalues.push("search"); }
-            if ($("#selectCollections").val() === null) { fieldvalues.push("date"); } else { fieldvalues.push("search"); }
+            //if ($("#selectCollections").val() === null) { fieldvalues.push("date"); } else { fieldvalues.push("search"); }
+			fieldvalues.push("date");
             modevalues.push("exact");
             connvalues.push("and");
         } 
@@ -195,7 +204,7 @@ jQuery(document).ready(function($){
 
 		console.log("Search URL:", searchurl);
 		
-		if (sessionStorage.getItem('debug-advanced-search-form') != "halt") {
+		if (!advancedSearchForm.debugging('halt')) {
 			window.parent.location.href = searchurl;
 		} /* if */
     });
@@ -388,11 +397,27 @@ advancedSearchForm.makeIsoDate = function (d) {
 
 advancedSearchForm.init = function () {
 	var self = this;
-	this.insertCollectionOptions().then( function () { console.log("self", self); self.initFieldOptions(); } );
+
+	self.searchableFields = self.initFieldOptions();
+	self.selectedCollections =
+		(self.colls = this.requestCollectionOptions())
+		.then( fv => this.rewriteCollectionOptions(fv) );		
+
+	Promise.resolve(this.selectedCollections).then( fv => $(fv).on('change', function () {
+		let selected = $(this).val();
+		return Promise.resolve(this.selectedCollections)
+			.then( Promise.resolve(self.searchableFields) )
+			.then ( function (fv) {
+				self.searchableFields = self.adjustSearchableFields({collections: selected});
+			} );
+	} ) );
+
+	this.aFieldPickerValues = searchFields.default;
+	this.pFieldSelect = Promise.resolve({collections: ['all']});
 	this.initFormatOptions();
 }
 
-advancedSearchForm.insertCollectionOptions = function () {
+advancedSearchForm.requestCollectionOptions = function () {
 /*
  * derived from comments in: https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html
  *
@@ -418,23 +443,45 @@ advancedSearchForm.insertCollectionOptions = function () {
  *  // ...
  * ]
  */
+	var self=this;
+	let url=cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json";
+	console.log("pipeline", "requestCollectionOptions", "request a-sending", url);
+
 	// create collection options
-	return $.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
-		var items = [];
+	return $.getJSON(url).then(function( data ) {
+		let items = [];
+		console.log("pipeline", "requestCollectionOptions", "request recv'd", data);
+
 		$.each( data, function( i, prop ) {
 			items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
 		});
-		$("#selectCollections").html(items.join(""));
+		return Promise.resolve(items.join("\n"));
+	});
+	
+} /* advancedSearchForm.requestCollectionOptions() */
 
-		// initialize collections drop-down
-		$('.collectionselectpicker').selectpicker({
+advancedSearchForm.rewriteCollectionOptions = function (html) {
+	console.log("pipeline", html, "rewriteCollectionOptions");
+	return Promise.resolve(html).then(fv => $("#selectCollections").html(fv));
+}
+
+advancedSearchForm.selectCollections = function (selected) {
+	console.log("pipeline", selected, "selectCollections");
+	return Promise.resolve(selected).then(function (fv) {
+		console.log("pipeline", fv, "!selectCollections");
+		let o = $('.collectionselectpicker').selectpicker({
 			actionsBox: true,
 			style: 'btn-info',
 			virtualScroll: true
 		});
-	}).promise();
-	
-} /* advancedSearchForm.insertCollectionOptions() */
+		
+		if (typeof(fv) != 'undefined') {
+			o.selectpicker('val', fv);
+		} /* if */
+		
+		return Promise.resolve($("#selectCollections").html());
+	});
+}
 
 advancedSearchForm.initFormatOptions = function () {
 	// initialize format drop-down
@@ -448,7 +495,8 @@ advancedSearchForm.initFormatOptions = function () {
 	// ...
 
 	// http://digital.archives.alabama.gov/digital/api/facet/facetfield/format/mode/all/conn/and
-	return $.getJSON( cdmOriginUrl() + "/digital/api/facet/facetfield/format/mode/all/conn/and", function( data ) {
+	return $.getJSON( cdmOriginUrl() + "/digital/api/facet/facetfield/format/mode/all/conn/and" )
+	.then(function( data ) {
 		var items = [];
 		$.each( data.facets.format, function( i, prop ) {
 			let optionId = prop.title;
@@ -458,24 +506,28 @@ advancedSearchForm.initFormatOptions = function () {
 		$("#selectFormats").html(items.join(""));
 
 		// initialize collections drop-down
-		$('.formatselectpicker').selectpicker({
+		return Promise.resolve($('.formatselectpicker').selectpicker({
 			style: 'btn-info',
 			virtualScroll: true
-		});
+		}));
 		
-	}).promise();
+	});
 	
 } /* advancedSearchForm.initFormatOptions () */
 
 advancedSearchForm.initFieldOptions = function () {
-	let collAliases = $("#selectCollections").find('option').map( function () { return $(this).prop('value'); } ).get();
-	console.log("collAliases", collAliases);
-	for (var i = 0; i<1; i++) {
-		$.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionFieldInfo/" + collAliases[i] + "/json", function( data ) {
-			console.log(this, data);
-		});
-	}
-	$('select[name=field]').html(advancedSearchForm.generateSelectOptions(defaultFields));
+	let self = this;
+	$('select[name=field]').each( function (el) { self.setSelectOptions( this, searchFields.default ); } );
+	return Promise.resolve( searchFields.default );
+} /* advancedSearchForm.initFieldOptions () */
+
+advancedSearchForm.setSelectOptions = function (el, v) {
+	let val = $(el).val();
+	let aOpts = []; for (key of Object.keys(v)) aOpts.push(v[key]);
+	let opts = this.generateSelectOptions(aOpts.filter(function (e) { return !searchFields.hidden['*'].includes(e.nick); }));
+
+	$(el).html(opts);
+	$(el).val(val);
 }
 
 advancedSearchForm.generateSelectOption = function (opt) {
@@ -487,10 +539,11 @@ advancedSearchForm.generateSelectOption = function (opt) {
 
 advancedSearchForm.generateSelectOptions = function (map) {
 	let opts = [];
-	for (let x of Object.keys(map)) {
-		opts.push( this.generateSelectOption(map[x]) );
-	}
-	console.log(opts);
+	
+	for (let key of Object.keys(map)) {
+		opts.push( this.generateSelectOption(map[key]) );
+	} /* for */
+
 	return opts.join("\n");
 }
 
@@ -529,39 +582,99 @@ advancedSearchForm.debugging = function (value) {
 	var dbg = sessionStorage.getItem('debug-advanced-search-form');
 	
 	if (typeof(value) == 'undefined') value=/.*/;
-	match = (!(dbg==null) && dbg.match(/.*/));
+	else if (typeof(value) == 'string') value = new RegExp('(^|,)' + value + '(,|$)');
+
+	match = (!(dbg==null) && (dbg == '*' || dbg===true || dbg.match(value)));
 	return match;
 }
 
+advancedSearchForm.adjustSearchableFields = function (params) {
+	let self=this;
+	params = $.extend({}, {collections: []}, params);
+
+	console.log("pipeline", "adjustment", params);
+
+	let colls = params.collections;
+	if (self.debugging()) console.log("advancedSearchForm.adjustSearchableFields", "Collections:", colls);
+
+	let cachedFields = [ Promise.resolve(searchFields.default) ];
+	
+	if (colls != null) {
+		let i = cachedFields.length;
+		for (coll of colls) {
+			const threshhold = 0; //60 /*s*/ * 1000 /*ms/s*/;
+			cachedFields[i] = Promise.resolve({collection: coll, json: sessionStorage.getItem("search-fields-collection-" + coll)}).then( function (o) {
+				let coll = o.collection;
+				let sv = o.json;
+				if (self.debugging('fields-cache')) console.log(coll, "=", sv);
+
+				let v = (sv==null ? null : JSON.parse(sv));
+						
+				if (v == null || (Date.now() - v.ts) > threshhold) {
+					if (self.debugging()) console.log(coll, (v==null ? v : v.ts), "not cached");
+					return self.requestCollectionFields(coll);
+				} else {
+					if (self.debugging()) console.log(coll, v.ts, "is cached!");
+					return Promise.resolve(v);
+				} /* if */
+			} ).then( function (c) {
+				return c.data.reduce(function (a, v) { a[v.nick] = v; return a; }, {});
+			} ) /* Promise.resolve().then() */;
+			i++;
+		} /* for */
+	} /* if */
+
+	return self.aFieldPickerValues = Promise.all(cachedFields).then( function (vv) {
+		if (self.debugging('fields')) console.log("all promises fulfilled...", vv);
+		let o = {};
+		for (v of vv) o = $.extend(o, v);
+		return o;
+	}).then(function (v) {
+		if (self.debugging('fields')) console.log("... and all results merged", v);
+		$('select[name=field]').each( function () { return self.setSelectOptions(this, v); } );
+	}) /* Promise.all().then() */;
+}
+
+advancedSearchForm.requestCollectionFields = function (collection) {
+	return $.getJSON(
+		cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionFieldInfo/" + encodeURIComponent(collection) + "/json"
+	).then(function( data ) {
+		var c = { ts: Date.now(), data: data };
+		sessionStorage.setItem("search-fields-collection-" + collection, JSON.stringify(c));
+		console.log("requestCollectionFields recv'd:", collection, data);
+		return Promise.resolve(data);
+	}).then(function ( data ) {
+		let ret = { ts: Date.now(), data: data }
+		console.log("requestCollectionFields pip'd:", collection, ret);
+		return Promise.resolve(ret);
+	}).promise();
+} /* advancedSearchForm.requestCollectionFields () */
+
 advancedSearchForm.populateCollectionFromURL = function () {
-	var ssUrl = advancedSearchForm.lastSearchURL();
+	var self = this;
+	var ssUrl = self.lastSearchURL();
+
 	if (ref = ssUrl.hasUrlParameter('collection')) {
 		var collectionString = ref[4];
 		var lastCollectionSelected = collectionString.split("!");
 
-		if (advancedSearchForm.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
+		if (self.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
 		
-		$.getJSON( cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json", function( data ) {
-                var items = [];
-                $.each( data, function( i, prop ) {
-                    items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
-                });
-                $("#selectCollections").html(items.join(""));
+		let sf = self.searchableFields;
+		return (self.searchableFields = Promise.resolve(self.colls)
+			.then( fv => self.rewriteCollectionOptions(fv) )
+			.then( fv => self.selectCollections( lastCollectionSelected ) )
+			.then( fv => sf )
+			.then( fv => self.adjustSearchableFields({ collections: lastCollectionSelected }) ));
+	} else {
+		return Promise.resolve(self.colls);
+	}
 
-                // initialize collections drop-down
-                $('.collectionselectpicker').selectpicker({
-                    actionsBox: true,
-                    style: 'btn-info',
-                    virtualScroll: true
-                });
-				console.log($('.collectionselectpicker'), lastCollectionSelected);
-                $('.collectionselectpicker').selectpicker('val', lastCollectionSelected);
-		}); /* $.getJSON */
-	} /* if */
 } /* advancedSearchForm.populateCollectionFromURL() */
 
 advancedSearchForm.populateSearchBoxesFromURL = function () {
-	var ssUrl = advancedSearchForm.lastSearchURL();
+	var self = this;
+	var ssUrl = self.lastSearchURL();
 	if (ref = ssUrl.hasUrlParameter('searchterm')) {
 
 		// search terms
@@ -615,7 +728,7 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 		}*/
 
 		if (modes[0].length < 3 || modes[0].length > 5) { modes[0] = "all"; }
-		if (fields[0].length < 4 || fields[0].length > 7) { fields[0] = "all"; }
+		//if (fields[0].length < 4 || fields[0].length > 7) { fields[0] = "all"; }
 		if (conns[0].length < 2 || conns[0].length > 3) { conns[0] = "and"; }
 		
 		if (fields[0] == "format" && formatValues.indexOf(decodeURI(terms[0]).split(" ")[0]) > -1) {
@@ -623,7 +736,12 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 			$('.formatselectpicker').selectpicker();
 			$('.formatselectpicker').selectpicker('val', lastFormatsSelected);
 		} else {
-			$("select[name='field']").val(fields[0]);
+			Promise.resolve(self.searchableFields)
+			.then(function (fv) {
+				console.log("pipeline", fv, "set value", fields[0]);
+				$("select[name='field']").val(fields[0]);
+				return fv;
+			} );
 		}
 		if ( decodeURI(terms[0]).match(/near5/) ) {
 			var unencodedTermsString = decodeURI(terms[0]).replace(/' '/g, '');
