@@ -10,7 +10,7 @@ To Install
 * Upload the contents of `/assets/js`, `/assets/css` and `/assets/html` as Custom Pages, using the same directory structure.
 
 Customizations Provided
-=======================
+-----------------------
 1. 	A highly customized Advanced Search Form, which:
 	* appears in a pop-up modal
 	* defaults to searching the present collection (rather than all collections)
@@ -28,3 +28,8 @@ Customizations Provided
 6. Displays the ContentDM menu as a horizontal menu bar rather than wrapped up into a hamburger menu when feasible.
 
 7. Displays explicit text labels for Download, Print, and View action buttons for displayed items.
+
+Developed By
+------------
+* Assembled by Charles Johnson, Alabama Department of Archives and History, 2019-2020.
+* Some original development, and lots of work copied, tweaked, or heavily modified from the [CONTENTdm Customization Cookbook](https://help.oclc.org/Metadata_Services/CONTENTdm/Advanced_website_customization/Customization_cookbook) and from [OhioMemory's CONTENTdm website](https://ohiomemory.org/).
