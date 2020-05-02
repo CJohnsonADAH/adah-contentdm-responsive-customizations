@@ -33,7 +33,7 @@ var searchFields = {
 	},
 
 	"hidden": {
-		"*": ["contac", "find", "fullrs"]
+		"*": ["contac", "find", "fullrs", "permis", "date"]
 	}
 };
 // trimmed these out, at least for the time being
@@ -660,7 +660,7 @@ advancedSearchForm.populateCollectionFromURL = function () {
 
 		if (self.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
 		
-		let sf = self.searchableFields;
+		let sf = self.searchableFields; // save current value/promise to avoid an inadvertently looped dependency
 		return (self.searchableFields = Promise.resolve(self.colls)
 			.then( fv => self.rewriteCollectionOptions(fv) )
 			.then( fv => self.selectCollections( lastCollectionSelected ) )
