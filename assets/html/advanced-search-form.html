@@ -401,7 +401,8 @@ advancedSearchForm.init = function () {
 	self.searchableFields = self.initFieldOptions();
 	self.selectedCollections =
 		(self.colls = this.requestCollectionOptions())
-		.then( fv => this.rewriteCollectionOptions(fv) );		
+		.then( fv => this.rewriteCollectionOptions(fv) )
+		.then( fv => self.selectCollections( [] ) );
 
 	Promise.resolve(this.selectedCollections).then( fv => $(fv).on('change', function () {
 		let selected = $(this).val();
