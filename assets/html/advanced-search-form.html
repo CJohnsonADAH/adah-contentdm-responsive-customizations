@@ -401,8 +401,7 @@ advancedSearchForm.init = function () {
 	self.searchableFields = self.initFieldOptions();
 	self.selectedCollections =
 		(self.colls = this.requestCollectionOptions())
-		.then( fv => this.rewriteCollectionOptions(fv) )
-		.then( fv => self.selectCollections( [] ) );
+		.then( fv => this.rewriteCollectionOptions(fv) );
 
 	Promise.resolve(this.selectedCollections).then( fv => $(fv).on('change', function () {
 		let selected = $(this).val();
@@ -654,22 +653,23 @@ advancedSearchForm.requestCollectionFields = function (collection) {
 advancedSearchForm.populateCollectionFromURL = function () {
 	var self = this;
 	var ssUrl = self.lastSearchURL();
-
+	let lastCollectionSelected = [];
+	
 	if (ref = ssUrl.hasUrlParameter('collection')) {
+
 		var collectionString = ref[4];
-		var lastCollectionSelected = collectionString.split("!");
+		lastCollectionSelected = collectionString.split("!");
 
 		if (self.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
 		
-		let sf = self.searchableFields; // save current value/promise to avoid an inadvertently looped dependency
-		return (self.searchableFields = Promise.resolve(self.colls)
-			.then( fv => self.rewriteCollectionOptions(fv) )
-			.then( fv => self.selectCollections( lastCollectionSelected ) )
-			.then( fv => sf )
-			.then( fv => self.adjustSearchableFields({ collections: lastCollectionSelected }) ));
-	} else {
-		return Promise.resolve(self.colls);
 	}
+
+	let sf = self.searchableFields; // save current value/promise to avoid an inadvertently looped dependency
+	return (self.searchableFields = Promise.resolve(self.colls)
+		.then( fv => self.rewriteCollectionOptions(fv) )
+		.then( fv => self.selectCollections( lastCollectionSelected ) )
+		.then( fv => sf )
+		.then( fv => self.adjustSearchableFields({ collections: lastCollectionSelected }) ));
 
 } /* advancedSearchForm.populateCollectionFromURL() */
 
