@@ -303,6 +303,16 @@ var adahCDMPageMenu = null;
 
 (function() {
 	
+	function adahCDMAddClassToBody(className) {
+		let els = document.getElementsByTagName('body');
+		for (let i=0; i<els.length; i++) {
+			if ( els[i].className.length > 0 ) {
+				els[i].className += ' ';
+			}
+			els[i].className += className;
+		}
+	}
+	
 	function adahCDMPageMenuLoader(e) {
 		
 		if (adahCDMPageMenu==null) {
@@ -322,6 +332,7 @@ var adahCDMPageMenu = null;
 			xhttp.onreadystatechange = function() {
 				if (this.readyState == 4 && this.status == 200) {
 					adahCDMPageMenu[this.responseURL] = this.responseText;
+					adahCDMAddClassToBody('cdm-custom-menu');
 				} else if (this.readyState == 4 && this.status >= 400) {
 					adahCDMPageMenu[this.responseURL] = '';
 				}
@@ -558,6 +569,12 @@ var adahCDMPageMenu = null;
 			// custom menus
 			let retrieveMenuEvent = retrieveMenuObjects[i] + ':' + retrieveMenuEvents[j];
 			document.addEventListener(retrieveMenuEvent, adahCDMPageMenuLoader);
+			
+			// mark body with CSS class
+			document.addEventListener(retrieveMenuEvent, function(e) {
+				const collection = e.detail.collectionId;
+				adahCDMAddClassToBody('cdm-' + collection);
+			});
 			
 			// advanced search page
 			document.addEventListener(retrieveMenuEvent, function(e) { setupAdvancedModal(e.detail.collectionId, e.target.URL);	});

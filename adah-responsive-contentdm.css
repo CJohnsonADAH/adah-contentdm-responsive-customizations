@@ -38,8 +38,10 @@
 	}
 
 	.Header-controls {
-		width: 100%;
-		position: static;
+		width: calc(100% - (2 * 10px));
+		position: absolute;
+		top: 100px;
+		left: 10px;
 	}
 
 	.Header-hamburgerHolder {
@@ -68,6 +70,10 @@
 	}
 	.Header-headerMenuLinks li > a:hover {
 		background: rgb(32, 84, 109) !important;
+		color: #FFFFFF !important;
+	}
+	.cdm-custom-menu .Header-headerMenuLinks li > a:hover {
+		background: transparent !important;
 		color: #FFFFFF !important;
 	}
 	.Header-headerMenuLinks a h3 {
