@@ -684,7 +684,8 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 		for (let param of parts) {
 			var rematch;
 			if (rematch = ssUrl.hasUrlParameter(param)) {
-				searchOps[param]=rematch[4].split("!");
+				let term = ((rematch.length >= 5 && typeof(rematch[4])=="string") ? rematch[4].split("!") : "")
+				searchOps[param]=term;
 			}				
 		} /* for */
 		
@@ -730,7 +731,7 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 
 		if (modes[0].length < 3 || modes[0].length > 5) { modes[0] = "all"; }
 		//if (fields[0].length < 4 || fields[0].length > 7) { fields[0] = "all"; }
-		if (conns[0].length < 2 || conns[0].length > 3) { conns[0] = "and"; }
+		if (conns.length < 1 || typeof(conns[0]) == "undefined" && (conns[0].length < 2 || conns[0].length > 3)) { conns[0] = "and"; }
 		
 		if (fields[0] == "format" && formatValues.indexOf(decodeURI(terms[0]).split(" ")[0]) > -1) {
 			var lastFormatsSelected = decodeURI(terms[0]).split(" ");
