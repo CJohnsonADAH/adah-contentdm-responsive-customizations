@@ -815,9 +815,9 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 		
 		var terms = searchOps['searchterm']; // term
 		var formatValues = ["picture", "objects", "books", "manuscripts", "newspapers", "government", "sound", "video"];
-		var fields = searchOps['field']; // field
-		var modes = searchOps['mode']; // mode
-		var conns = searchOps['conn']; // connector
+		var fields = (searchOps.hasOwnProperty('field') ? searchOps['field'] : []); // field
+		var modes = (searchOps.hasOwnProperty('mode') ? searchOps['mode'] : []); // mode
+		var conns = (searchOps.hasOwnProperty('conn') ? searchOps['conn'] : []); // connector
 
 		if (sessionStorage.getItem('debug-advanced-search-form') != null) {
 			console.log("url", ssUrl, "terms", terms, "fields", fields, "modes", modes, "conns", conns);
@@ -825,6 +825,7 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 		
 		// dates
 		var dates = []; var cut = [];
+		
 		for (let i = 0; i < fields.length; i++) {
 			if (fields[i].match(/^(date)$/)) {
 				dates = terms[i].split("-");
@@ -853,9 +854,9 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 			fields[0] = "coverab";
 		}*/
 
-		if (modes[0].length < 3 || modes[0].length > 5) { modes[0] = "all"; }
+		if (modes.length == 0 || modes[0].length < 3 || modes[0].length > 5) { modes[0] = "all"; }
 		//if (fields[0].length < 4 || fields[0].length > 7) { fields[0] = "all"; }
-		if (conns.length < 1 || typeof(conns[0]) == "undefined" && (conns[0].length < 2 || conns[0].length > 3)) { conns[0] = "and"; }
+		if (conns.length == 0 || conns.length < 1 || typeof(conns[0]) == "undefined" && (conns[0].length < 2 || conns[0].length > 3)) { conns[0] = "and"; }
 		
 		if (fields[0] == "format" && formatValues.indexOf(decodeURI(terms[0]).split(" ")[0]) > -1) {
 			var lastFormatsSelected = decodeURI(terms[0]).split(" ");
