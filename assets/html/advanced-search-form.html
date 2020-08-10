@@ -4,7 +4,7 @@
 <!-- Advanced Search Form for a Responsive ContentDM Site -->
 <!-- Derived from Ohio Memory Advanced Search Form, https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html -->
 <meta name="author" content="C. Johnson" />
-<meta name="version" content="2020.0501-1333" />
+<meta name="version" content="2020.0810-1402" />
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -363,6 +363,7 @@ jQuery(document).ready(function($){
                     <div class="col-md-8 col-md-offset-2 AdvancedSearch-content">
                         <div class="well well-sm">
                             <div id="restrict_element" class="form-group checkbox-inline">
+								Search Collections: &nbsp;&nbsp;
                                 <select id="selectCollections" class="form-group collectionselectpicker" title="Select Collections" multiple data-selected-text-format="count"></select>
                                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  
                                 <!--<span id="sourcesHelp" class="linkClass" title="Clicking the checkbox will exclude resources containing full text, such as newspapers or books.">Exclude full text sources</span>? 
@@ -387,6 +388,46 @@ jQuery(document).ready(function($){
 <script>
 
 var advancedSearchForm = {};
+
+advancedSearchForm.excludedMosaic = [
+"afa01", // Alabama Folklife Association
+"p17217coll2", // Autauga Co.
+"asfa01", // Alabama School of Fine Arts
+"p17217coll10", // Athens State University
+"sylacauga", // B.B. Comer Library (Sylacauga)
+"bbg01", // Birmingham Botanial Gardens
+"bcri", // Birmingham Civil Rights Institute
+"carlelliott", // Carl Elliott Regional Library
+"cherokeechm", // Cherokee County Historical Museum
+"p17217coll5", // Cobb Memorial Archives
+"daphmuseum", // Daphne Museum
+"fpl01", // Fairhope Public Library
+"faulkneruni", // Faulkner University Archive
+"franelich", // Franelich Collection
+"gpl01", // Gadsden Public Library
+"p17217coll9", // Gulf Shores Museum
+"hodrrm", // Heart of Dixie Railroad Museum
+"hmps", // Historic Mobile Preservation Society
+"huntingdon", // Huntingdon College
+"jsu1", // Jacksonville State University Library
+"mjmcoll", // Marietta Johnson Museum
+"p17217coll8", // Montgomery County Archives
+"nacc1", // Northeast Alabama Community College
+"selmapl", // Selma-Dallas County Public Library
+"splc", // Southern Poverty Law Center Reports
+"tgs", // Tuscaloosa Genealogical Society
+"tren01", // Trenholm State Community College
+"troy2", // Troy University Library
+"tu01", // Tuskegee University
+"ussa", // United States Sports Academy
+"usa01", // University of South Alabama, McCall Library
+"uwa", // University of West Alabama
+"p17217coll4", // Tupper Lightfoot Memorial Library
+"vina1", // Town of Vina
+"wire01", // Wiregrass Archives
+"time_capsule" // Montgomery Time Capsule
+];
+
 advancedSearchForm.makeIsoDate = function (d) {
 	var dd = "";
 	d.substring(0, 4) !== "" ? dd += d.substring(0, 4) : "";
@@ -399,6 +440,9 @@ advancedSearchForm.init = function () {
 	var self = this;
 
 	self.searchableFields = self.initFieldOptions();
+	
+	self.requestGlobalOptions();
+	
 	self.selectedCollections =
 		(self.colls = this.requestCollectionOptions())
 		.then( fv => this.rewriteCollectionOptions(fv) );
@@ -415,6 +459,49 @@ advancedSearchForm.init = function () {
 	this.aFieldPickerValues = searchFields.default;
 	this.pFieldSelect = Promise.resolve({collections: ['all']});
 	this.initFormatOptions();
+}
+
+advancedSearchForm.getCollectionsFromURL = function () {
+	let self = this;
+	let ssUrl = self.lastSearchURL();
+	let lastCollectionSelected = [];
+	
+	if (ref = ssUrl.hasUrlParameter('collection')) {
+
+		var collectionString = ref[4];
+		lastCollectionSelected = collectionString.split("!");
+
+		if (self.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
+		
+	}
+	
+	return lastCollectionSelected;
+}
+
+advancedSearchForm.requestGlobalOptions = function () {
+	var self=this;
+	let url=cdmOriginUrl() + '/customizations/global/pages/assets/json/config.json';
+	console.log("pipeline", "requestGlobalOptions", "request a-sending (global)", url);
+
+	// create collection options
+	return $.getJSON(url).then(function( data ) {
+		let items = [];
+		console.log("pipeline", "requestGlobalOptions", "request recv'd", data);
+
+		//$.each( data, function( i, prop ) {
+		//	let sAlias = prop.alias.substring(1);
+		//	
+		//	let bInIt = self.getCollectionsFromURL().some( val => self.excludedMosaic.includes(val) );
+		//	let bThisOne = self.getCollectionsFromURL().includes(sAlias);
+		//	let bOnExcluded = self.excludedMosaic.includes(sAlias);
+		//	
+		//	let bIncluded = (bInIt ? bThisOne : !bOnExcluded);
+		//	if (bIncluded) {
+		//		items.push( '<option id="' + sAlias + '" value="' + sAlias + '">' + prop.name + '</option>' );
+		//	} /* if */
+		//});
+		return Promise.resolve(data);
+	});
 }
 
 advancedSearchForm.requestCollectionOptions = function () {
@@ -453,7 +540,16 @@ advancedSearchForm.requestCollectionOptions = function () {
 		console.log("pipeline", "requestCollectionOptions", "request recv'd", data);
 
 		$.each( data, function( i, prop ) {
-			items.push( '<option id="' + prop.alias.substring(1) + '" value="' + prop.alias.substring(1) + '">' + prop.name + '</option>' );
+			let sAlias = prop.alias.substring(1);
+			
+			let bInIt = self.getCollectionsFromURL().some( val => self.excludedMosaic.includes(val) );
+			let bThisOne = self.getCollectionsFromURL().includes(sAlias);
+			let bOnExcluded = self.excludedMosaic.includes(sAlias);
+			
+			let bIncluded = (bInIt ? bThisOne : !bOnExcluded);
+			if (bIncluded) {
+				items.push( '<option id="' + sAlias + '" value="' + sAlias + '">' + prop.name + '</option>' );
+			} /* if */
 		});
 		return Promise.resolve(items.join("\n"));
 	});
@@ -475,7 +571,9 @@ advancedSearchForm.selectCollections = function (selected) {
 			virtualScroll: true
 		});
 		
-		if (typeof(fv) != 'undefined') {
+		if (fv.length == 0) {
+			o.selectpicker('selectAll');
+		} else if (typeof(fv) != 'undefined') {
 			o.selectpicker('val', fv);
 		} /* if */
 		

@@ -314,7 +314,104 @@ var adahCDMPageMenu = null;
 	}
 	
 	function adahCDMPageMenuLoader(e) {
-		
+		let adahCollectionData = document.getElementById('adah-meta-collection-data');
+		if ( adahCollectionData ) {
+			adahCollectionData.innerHTML = '';
+		} else {
+			let bodyElements = document.getElementsByTagName('body');
+			for (i = 0; i<bodyElements.length; i++) {
+				var oTable = document.createElement('table');
+				
+				bodyElements[i].appendChild(oTable);
+				oTable.setAttribute('id', 'adah-meta-collection-data');
+				oTable.setAttribute('style', 'display: none');
+			}
+		}
+			
+		let jsonurl = window.location.origin + '/customizations/global/pages/assets/json/config.json';
+		var xhttp = new XMLHttpRequest;
+		xhttp.overrideMimeType("application/json");
+		xhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				console.log("Got config.json");
+				let adahCollectionData = document.getElementById('adah-meta-collection-data');
+
+				if ( adahCollectionData ) {
+					let jsonResponse = JSON.parse(this.responseText);
+					let specColls = jsonResponse["special-collections"];
+					
+					adahCollectionData.innerHTML = '';
+					if ( specColls ) {
+						for (let coll in specColls) {
+							if (specColls.hasOwnProperty(coll)) {
+								let tr = document.createElement('tr');
+								let th = document.createElement('th');
+								let textNode = document.createTextNode(coll);
+								
+								th.appendChild(textNode);
+								tr.appendChild(th);
+								
+								for (let prop in specColls[coll]) {
+									let td = document.createElement('td');
+									let textNode = document.createTextNode(specColls[coll][prop]);
+									
+									td.setAttribute('id', 'adah-meta-collection-data-' + coll + "-" + prop);
+									td.setAttribute('class', 'adah-meta-collection-data-' + prop);
+									td.appendChild(textNode);
+									tr.appendChild(td);
+								}
+								
+								tr.setAttribute('id', 'adah-meta-collection-data-' + coll);
+
+								adahCollectionData.appendChild(tr);
+								console.log("THIS:", coll, specColls[coll]);
+							}
+						}
+						
+						const collection = e.detail.collectionId;
+						if (typeof(collection) != 'undefined' && collection.length > 0 && collection.split("|").length == 1) {
+							console.log("STYLES: In a SINGLE COLLECTION");
+							let tag = null;
+							let tagEl = document.getElementById('adah-meta-collection-data-' + collection + '-tag');
+							if (tagEl) {
+								tag = tagEl.innerText;
+							}
+							if (tag == 'mosaic') {
+								console.log("STYLES: In a MOSAIC COLLECTION");
+								let loadedCustomCss = false;
+								let linkEls = document.getElementsByTagName('link');
+								for (let i = 0; i < linkEls.length; i++) {
+									if (linkEls[i].getAttribute('rel') == 'stylesheet') {
+										if (linkEls[i].getAttribute('data-collection-css') == 'true') {
+											console.log(collection, "LINKEM STYLES: ", linkEls[i], 'adah-meta-collection-data-' + collection + '-tag', tag);
+											loadedCustomCss = true;
+										}
+									}
+								} /* for */
+								
+								if (!loadedCustomCss) {
+									let customCssHref = '/customizations/collection/' + collection + '/' + collection + 'Styles.css';
+									console.log("STYLES: WE NEED TO LOAD ER UP:", customCssHref );
+									let elLink = document.createElement('link');
+									elLink.setAttribute('data-collection-css', 'true');
+									elLink.setAttribute('rel', 'stylesheet');
+									elLink.setAttribute('href', customCssHref);
+
+									let elRoot = document.getElementById('root');
+									elRoot.parentNode.insertBefore(elLink, elRoot);
+								} /* if */
+							}
+						}
+					}
+				}
+				
+			} else if (this.readyState == 4 && this.status >= 400) {
+				// ...
+			}
+		}
+		xhttp.open("GET", jsonurl, true);
+		xhttp.send();			
+
 		if (adahCDMPageMenu==null) {
 			let head = document.getElementsByClassName('Header-header');
 			let menu = document.getElementsByClassName('Header-headerMenuLinks', head);
@@ -573,7 +670,7 @@ var adahCDMPageMenu = null;
 			// mark body with CSS class
 			document.addEventListener(retrieveMenuEvent, function(e) {
 				const collection = e.detail.collectionId;
-				adahCDMAddClassToBody('cdm-' + collection);
+				adahCDMAddClassToBody('cdm-' + collection);				
 			});
 			
 			// advanced search page
@@ -596,6 +693,8 @@ var adahCDMPageMenu = null;
 		} else {
 			console.log("Viewing a record: ", ref);
 		} /* if */
+		
+		// FIXME: IS THERE A WAY THAT WE CAN GRAB AHOLD OF $('#search-input') AND REWRITE HOW WE HANDLE IT?
 		
 		ScriptLoader('https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js', function(){
 			console.log("link: ", document.getElementsByClassName("SimpleSearch-headerAdvancedSearchButtonLink")[0]);
