@@ -97,7 +97,10 @@ jQuery(document).ready(function($){
 
         e.preventDefault();
 		
-        var searchurl = cdmOriginUrl() + '/digital/search';
+		var aSearchPath = [];
+		aSearchPath.push(cdmOriginUrl());
+		aSearchPath.push('digital');
+		
         var modevalues = [];
         var modeClasses = [];
         var searchCriteria = "";
@@ -153,7 +156,7 @@ jQuery(document).ready(function($){
             var searchCollectionValues = $("#selectCollections").val();
             if (searchCollectionValues.length > 0 && searchCollectionValues.length < 147) {
                 $('#restrict_options').text(searchCollectionValues.length + " collections chosen");
-                collCriteria = '/collection/' + searchCollectionValues.join("!");
+                collCriteria = 'collection/' + searchCollectionValues.join("!");
             }
         }
 		if (advancedSearchForm.debugging()) {
@@ -198,10 +201,33 @@ jQuery(document).ready(function($){
             }
             searchCriteria = 'searchterm/' + searchvals;
         }
+
         // https://ohiomemory.org/customizations/global/pages/advancedsearch_resources/advanced_search.html?undefined&search/searchterm/buckeye%20steamboat/field/all/mode/all/conn/and
         // e.g https://ohiomemory.org/digital/search/collection/p267401coll32!p16007coll51/searchterm/war!battle!19050101-19191231/field/subjec!all!date/mode/all!all!exact/conn/and!and!and/order/nosort 1905-01-01 1919-12-31
-        searchurl += collCriteria + '/' + searchCriteria + '/field/' + fieldvalues.join("!") + '/mode/' + modevalues.join("!") + '/conn/' + connvalues.join("!");
 
+		// Do we prefix /collection/[SLUG] *before* the /search endpoint? Or append it *after* the /search endpoint?
+		// When we have ONLY ONE (1) collection, we can prefix it before the endpoint and so make use of special collection display settings
+		// When we have TWO OR MORE (>=2) collections, it must be *after* the /search endpoint, or ContentDM will spit back an error
+		
+		// collection/[SLUG]/search when we have ONE OR FEWER collections.
+		if (searchCollectionValues.length <= 1) {
+			aSearchPath.push(collCriteria);
+			aSearchPath.push('search');
+
+		// search/collection/[SLUG1]![SLUG2]... when we have TWO OR MORE collections.		
+		} else {
+			aSearchPath.push('search');
+			aSearchPath.push(collCriteria);
+			
+		} /* if */
+		
+		aSearchPath.push(searchCriteria);
+		aSearchPath.push('field/' + fieldvalues.join("!"));
+		aSearchPath.push('mode/' + modevalues.join("!"));
+		aSearchPath.push('conn/' + connvalues.join("!"));
+		
+		let searchurl = aSearchPath.join('/');
+		
 		console.log("Search URL:", searchurl);
 		
 		if (!advancedSearchForm.debugging('halt')) {
