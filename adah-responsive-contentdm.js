@@ -333,7 +333,7 @@ var adahCDMPageMenu = null;
 		xhttp.overrideMimeType("application/json");
 		xhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
-				console.log("Got config.json");
+				//console.log("Got config.json");
 				let adahCollectionData = document.getElementById('adah-meta-collection-data');
 
 				if ( adahCollectionData ) {
@@ -364,44 +364,43 @@ var adahCDMPageMenu = null;
 								tr.setAttribute('id', 'adah-meta-collection-data-' + coll);
 
 								adahCollectionData.appendChild(tr);
-								console.log("THIS:", coll, specColls[coll]);
 							}
 						}
 						
-						const collection = e.detail.collectionId;
-						if (typeof(collection) != 'undefined' && collection.length > 0 && collection.split("|").length == 1) {
-							console.log("STYLES: In a SINGLE COLLECTION");
-							let tag = null;
-							let tagEl = document.getElementById('adah-meta-collection-data-' + collection + '-tag');
-							if (tagEl) {
-								tag = tagEl.innerText;
-							}
-							if (tag == 'mosaic') {
-								console.log("STYLES: In a MOSAIC COLLECTION");
-								let loadedCustomCss = false;
-								let linkEls = document.getElementsByTagName('link');
-								for (let i = 0; i < linkEls.length; i++) {
-									if (linkEls[i].getAttribute('rel') == 'stylesheet') {
-										if (linkEls[i].getAttribute('data-collection-css') == 'true') {
-											console.log(collection, "LINKEM STYLES: ", linkEls[i], 'adah-meta-collection-data-' + collection + '-tag', tag);
-											loadedCustomCss = true;
-										}
-									}
-								} /* for */
-								
-								if (!loadedCustomCss) {
-									let customCssHref = '/customizations/collection/' + collection + '/' + collection + 'Styles.css';
-									console.log("STYLES: WE NEED TO LOAD ER UP:", customCssHref );
-									let elLink = document.createElement('link');
-									elLink.setAttribute('data-collection-css', 'true');
-									elLink.setAttribute('rel', 'stylesheet');
-									elLink.setAttribute('href', customCssHref);
+						//const collection = e.detail.collectionId;
+						//if (typeof(collection) != 'undefined' && collection.length > 0 && collection.split("|").length == 1) {
+						//	console.log("STYLES: In a SINGLE COLLECTION");
+						//	let tag = null;
+						//	let tagEl = document.getElementById('adah-meta-collection-data-' + collection + '-tag');
+						//	if (tagEl) {
+						//		tag = tagEl.innerText;
+						//	}
+						//	if (tag == 'mosaic') {
+						//		console.log("STYLES: In a MOSAIC COLLECTION");
+						//		let loadedCustomCss = false;
+						//		let linkEls = document.getElementsByTagName('link');
+						//		for (let i = 0; i < linkEls.length; i++) {
+						//			if (linkEls[i].getAttribute('rel') == 'stylesheet') {
+						//				if (linkEls[i].getAttribute('data-collection-css') == 'true') {
+						//					console.log(collection, "LINKEM STYLES: ", linkEls[i], 'adah-meta-collection-data-' + collection + '-tag', tag);
+						//					loadedCustomCss = true;
+						//				}
+						//			}
+						//		} /* for */
+						//		
+						//		if (!loadedCustomCss) {
+						//			let customCssHref = '/customizations/collection/' + collection + '/' + collection + 'Styles.css';
+						//			console.log("STYLES: WE NEED TO LOAD ER UP:", customCssHref );
+						//			let elLink = document.createElement('link');
+						//			elLink.setAttribute('data-collection-css', 'true');
+						//			elLink.setAttribute('rel', 'stylesheet');
+						//			elLink.setAttribute('href', customCssHref);
 
-									let elRoot = document.getElementById('root');
-									elRoot.parentNode.insertBefore(elLink, elRoot);
-								} /* if */
-							}
-						}
+						//			let elRoot = document.getElementById('root');
+						//			elRoot.parentNode.insertBefore(elLink, elRoot);
+						//		} /* if */
+						//	}
+						//}
 					}
 				}
 				

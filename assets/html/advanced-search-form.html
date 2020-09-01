@@ -415,45 +415,6 @@ jQuery(document).ready(function($){
 
 var advancedSearchForm = {};
 
-advancedSearchForm.excludedMosaic = [
-"afa01", // Alabama Folklife Association
-"p17217coll2", // Autauga Co.
-"asfa01", // Alabama School of Fine Arts
-"p17217coll10", // Athens State University
-"sylacauga", // B.B. Comer Library (Sylacauga)
-"bbg01", // Birmingham Botanial Gardens
-"bcri", // Birmingham Civil Rights Institute
-"carlelliott", // Carl Elliott Regional Library
-"cherokeechm", // Cherokee County Historical Museum
-"p17217coll5", // Cobb Memorial Archives
-"daphmuseum", // Daphne Museum
-"fpl01", // Fairhope Public Library
-"faulkneruni", // Faulkner University Archive
-"franelich", // Franelich Collection
-"gpl01", // Gadsden Public Library
-"p17217coll9", // Gulf Shores Museum
-"hodrrm", // Heart of Dixie Railroad Museum
-"hmps", // Historic Mobile Preservation Society
-"huntingdon", // Huntingdon College
-"jsu1", // Jacksonville State University Library
-"mjmcoll", // Marietta Johnson Museum
-"p17217coll8", // Montgomery County Archives
-"nacc1", // Northeast Alabama Community College
-"selmapl", // Selma-Dallas County Public Library
-"splc", // Southern Poverty Law Center Reports
-"tgs", // Tuscaloosa Genealogical Society
-"tren01", // Trenholm State Community College
-"troy2", // Troy University Library
-"tu01", // Tuskegee University
-"ussa", // United States Sports Academy
-"usa01", // University of South Alabama, McCall Library
-"uwa", // University of West Alabama
-"p17217coll4", // Tupper Lightfoot Memorial Library
-"vina1", // Town of Vina
-"wire01", // Wiregrass Archives
-"time_capsule" // Montgomery Time Capsule
-];
-
 advancedSearchForm.makeIsoDate = function (d) {
 	var dd = "";
 	d.substring(0, 4) !== "" ? dd += d.substring(0, 4) : "";
@@ -464,6 +425,8 @@ advancedSearchForm.makeIsoDate = function (d) {
 
 advancedSearchForm.init = function () {
 	var self = this;
+
+	self.excludedMosaic = [];
 
 	self.searchableFields = self.initFieldOptions();
 	
@@ -507,13 +470,26 @@ advancedSearchForm.getCollectionsFromURL = function () {
 advancedSearchForm.requestGlobalOptions = function () {
 	var self=this;
 	let url=cdmOriginUrl() + '/customizations/global/pages/assets/json/config.json';
-	console.log("pipeline", "requestGlobalOptions", "request a-sending (global)", url);
+	//console.log("pipeline", "requestGlobalOptions", "request a-sending (global)", url);
 
 	// create collection options
 	return $.getJSON(url).then(function( data ) {
 		let items = [];
 		console.log("pipeline", "requestGlobalOptions", "request recv'd", data);
 
+		if (data.hasOwnProperty('special-collections')) {
+			let specColls = data['special-collections'];
+			for (let coll in specColls) {
+				if (specColls.hasOwnProperty(coll)) {
+					if (specColls[coll].hasOwnProperty("tag")) {
+						if ('adah' != specColls[coll].tag) {
+							self.excludedMosaic.push(coll);
+						}
+					}
+				}
+			} /* for */
+		}
+		
 		//$.each( data, function( i, prop ) {
 		//	let sAlias = prop.alias.substring(1);
 		//	
