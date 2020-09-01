@@ -715,6 +715,12 @@ var adahCDMPageMenu = null;
 				e.stopPropagation();
 				e.preventDefault();
 			});
+			document.getElementById('advanced-search-button').addEventListener("click", function(e) {
+				e.stopPropagation();
+				e.preventDefault();
+				
+				advSearchContent.open();
+			});
 		});
 	}
 
