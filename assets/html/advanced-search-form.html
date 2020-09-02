@@ -4,7 +4,7 @@
 <!-- Advanced Search Form for a Responsive ContentDM Site -->
 <!-- Derived from Ohio Memory Advanced Search Form, https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html -->
 <meta name="author" content="C. Johnson" />
-<meta name="version" content="2020.0810-1402" />
+<meta name="version" content="2020.0902-1009" />
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -12,6 +12,7 @@
 <base href="//digital.archives.alabama.gov/customizations/global/pages/assets/html/advanced-search-form.html" />
 <link href="/customizations/global/pages/assets/css/advanced-search-form.css" media="all" rel="stylesheet" />
 
+<script src="/customizations/global/pages/assets/js/cdm-api.js"></script>
 <script src="/customizations/global/pages/assets/js/jquery-min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js"></script>
 
@@ -47,36 +48,6 @@ var searchFields = {
 
 //]>
 
-// from: https://stackoverflow.com/questions/6644654/parse-an-url-in-javascript
-/**
- * @param string url
- * @return Location an object containing the parsed-out components of the URL
- * 		(e.g.: u.href, u.protocol, u.host, u.pathname, u.search, u.hash, u.origin, ...)
- */
-String.prototype.parseUrl = function () {
-	let a = document.createElement('a');
-	a.href = this.toString();
-	return a;
-} /* parseUrl() */
-
-String.prototype.hasUrlParameter = function (name) {
-	var re = new RegExp('(^|/)(' + name + ')(/+([^/]+))?(/|$)');
-	return this.toString().match(re);
-}
-
-function cdmOriginUrl () {
-	let base = jQuery('base');
-	let url = (base.length > 0 ? base.attr('href') : window.location.href);
-	return url.parseUrl().origin;
-}
-
-function reqParam ( key ) {
-	let asUrlQuery = window.location.search.substring(1).split("&");
-	let hParam = {}; $.each( asUrlQuery, function (i, pair) { let kv = pair.split("="); hParam[kv[0]] = kv[1] } );
-	
-	return ( ( typeof(key)=='undefined' || key.length==0 ) ? hParam : hParam[key] );
-}
-
 // 
 jQuery(document).ready(function($){
 	console.log("advanced-search-form.html", "@version", $('meta[name=version]').prop('content'));
@@ -98,7 +69,7 @@ jQuery(document).ready(function($){
         e.preventDefault();
 		
 		var aSearchPath = [];
-		aSearchPath.push(cdmOriginUrl());
+		aSearchPath.push(advancedSearchForm.cdm.originUrl());
 		aSearchPath.push('digital');
 		
         var modevalues = [];
@@ -426,6 +397,8 @@ advancedSearchForm.makeIsoDate = function (d) {
 advancedSearchForm.init = function () {
 	var self = this;
 
+	self.cdm = new cdmApi();
+	
 	self.excludedMosaic = [];
 
 	self.searchableFields = self.initFieldOptions();
@@ -469,14 +442,18 @@ advancedSearchForm.getCollectionsFromURL = function () {
 
 advancedSearchForm.requestGlobalOptions = function () {
 	var self=this;
-	let url=cdmOriginUrl() + '/customizations/global/pages/assets/json/config.json';
-	//console.log("pipeline", "requestGlobalOptions", "request a-sending (global)", url);
-
+	let url=self.cdm.originUrl('/customizations/global/pages/assets/json/config.json');
+	
+	if (self.debugging("pipeline")) {
+		console.log("pipeline", "requestGlobalOptions", "request a-sending (global)", url);
+	}
+	
 	// create collection options
 	return $.getJSON(url).then(function( data ) {
 		let items = [];
-		console.log("pipeline", "requestGlobalOptions", "request recv'd", data);
-
+		if (self.debugging("pipeline")) {
+			console.log("pipeline", "requestGlobalOptions", "request recv'd", data);
+		}
 		if (data.hasOwnProperty('special-collections')) {
 			let specColls = data['special-collections'];
 			for (let coll in specColls) {
@@ -533,14 +510,16 @@ advancedSearchForm.requestCollectionOptions = function () {
  * ]
  */
 	var self=this;
-	let url=cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json";
-	console.log("pipeline", "requestCollectionOptions", "request a-sending", url);
-
+	let url=self.cdm.originUrl("/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json");
+	if (self.debugging("pipeline")) {
+		console.log("pipeline", "requestCollectionOptions", "request a-sending", url);
+	}
 	// create collection options
 	return $.getJSON(url).then(function( data ) {
 		let items = [];
-		console.log("pipeline", "requestCollectionOptions", "request recv'd", data);
-
+		if (self.debugging("pipeline")) {
+			console.log("pipeline", "requestCollectionOptions", "request recv'd", data);
+		}
 		$.each( data, function( i, prop ) {
 			let sAlias = prop.alias.substring(1);
 			
@@ -559,14 +538,22 @@ advancedSearchForm.requestCollectionOptions = function () {
 } /* advancedSearchForm.requestCollectionOptions() */
 
 advancedSearchForm.rewriteCollectionOptions = function (html) {
-	console.log("pipeline", html, "rewriteCollectionOptions");
+	let self = this;
+	if (self.debugging("pipeline")) {
+		console.log("pipeline", html, "rewriteCollectionOptions");
+	}
 	return Promise.resolve(html).then(fv => $("#selectCollections").html(fv));
 }
 
 advancedSearchForm.selectCollections = function (selected) {
-	console.log("pipeline", selected, "selectCollections");
+	let self = this;
+	if (self.debugging("pipeline")) {
+		console.log("pipeline", selected, "selectCollections");
+	}
 	return Promise.resolve(selected).then(function (fv) {
-		console.log("pipeline", fv, "!selectCollections");
+		if (self.debugging("pipeline")) {
+			console.log("pipeline", fv, "!selectCollections");
+		}
 		let o = $('.collectionselectpicker').selectpicker({
 			actionsBox: true,
 			style: 'btn-info',
@@ -595,7 +582,8 @@ advancedSearchForm.initFormatOptions = function () {
 	// ...
 
 	// http://digital.archives.alabama.gov/digital/api/facet/facetfield/format/mode/all/conn/and
-	return $.getJSON( cdmOriginUrl() + "/digital/api/facet/facetfield/format/mode/all/conn/and" )
+	let self = this;
+	return $.getJSON( self.cdm.originUrl("/digital/api/facet/facetfield/format/mode/all/conn/and") )
 	.then(function( data ) {
 		var items = [];
 		$.each( data.facets.format, function( i, prop ) {
@@ -692,8 +680,10 @@ advancedSearchForm.adjustSearchableFields = function (params) {
 	let self=this;
 	params = $.extend({}, {collections: []}, params);
 
-	console.log("pipeline", "adjustment", params);
-
+	if (self.debugging("pipeline")) {
+		console.log("pipeline", "adjustment", params);
+	}
+	
 	let colls = params.collections;
 	if (self.debugging()) console.log("advancedSearchForm.adjustSearchableFields", "Collections:", colls);
 
@@ -736,16 +726,21 @@ advancedSearchForm.adjustSearchableFields = function (params) {
 }
 
 advancedSearchForm.requestCollectionFields = function (collection) {
+	let self=this;
 	return $.getJSON(
-		cdmOriginUrl() + "/digital/bl/dmwebservices/index.php?q=dmGetCollectionFieldInfo/" + encodeURIComponent(collection) + "/json"
+		self.cdm.originUrl("/digital/bl/dmwebservices/index.php?q=dmGetCollectionFieldInfo/" + encodeURIComponent(collection) + "/json")
 	).then(function( data ) {
 		var c = { ts: Date.now(), data: data };
 		sessionStorage.setItem("search-fields-collection-" + collection, JSON.stringify(c));
-		console.log("requestCollectionFields recv'd:", collection, data);
+		if (self.debugging('pipeline')) {
+			console.log("requestCollectionFields recv'd:", collection, data);
+		}
 		return Promise.resolve(data);
 	}).then(function ( data ) {
 		let ret = { ts: Date.now(), data: data }
-		console.log("requestCollectionFields pip'd:", collection, ret);
+		if (self.debugging('pipeline')) {
+			console.log("requestCollectionFields pip'd:", collection, ret);
+		}
 		return Promise.resolve(ret);
 	}).promise();
 } /* advancedSearchForm.requestCollectionFields () */
@@ -841,7 +836,9 @@ advancedSearchForm.populateSearchBoxesFromURL = function () {
 		} else {
 			Promise.resolve(self.searchableFields)
 			.then(function (fv) {
-				console.log("pipeline", fv, "set value", fields[0]);
+				if (self.debugging("pipeline")) {
+					console.log("pipeline", fv, "set value", fields[0]);
+				}
 				$("select[name='field']").val(fields[0]);
 				return fv;
 			} );

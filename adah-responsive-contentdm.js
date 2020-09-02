@@ -313,7 +313,7 @@ var adahCDMPageMenu = null;
 		}
 	}
 	
-	function adahCDMPageMenuLoader(e) {
+	function adahCDMGetGlobalProperties(e) {
 		let adahCollectionData = document.getElementById('adah-meta-collection-data');
 		if ( adahCollectionData ) {
 			adahCollectionData.innerHTML = '';
@@ -324,93 +324,172 @@ var adahCDMPageMenu = null;
 				
 				bodyElements[i].appendChild(oTable);
 				oTable.setAttribute('id', 'adah-meta-collection-data');
-				oTable.setAttribute('style', 'display: none');
+				oTable.setAttribute('style', 'display: none');				
 			}
 		}
-			
-		let jsonurl = window.location.origin + '/customizations/global/pages/assets/json/config.json';
-		var xhttp = new XMLHttpRequest;
-		xhttp.overrideMimeType("application/json");
-		xhttp.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-				//console.log("Got config.json");
-				let adahCollectionData = document.getElementById('adah-meta-collection-data');
 
-				if ( adahCollectionData ) {
-					let jsonResponse = JSON.parse(this.responseText);
-					let specColls = jsonResponse["special-collections"];
-					
-					adahCollectionData.innerHTML = '';
-					if ( specColls ) {
-						for (let coll in specColls) {
-							if (specColls.hasOwnProperty(coll)) {
-								let tr = document.createElement('tr');
-								let th = document.createElement('th');
-								let textNode = document.createTextNode(coll);
-								
-								th.appendChild(textNode);
-								tr.appendChild(th);
-								
-								for (let prop in specColls[coll]) {
-									let td = document.createElement('td');
-									let textNode = document.createTextNode(specColls[coll][prop]);
+		ScriptLoader('/customizations/global/pages/assets/js/cdm-api.js', function () {
+			cdm = new cdmApi();
+			jsonurl = cdm.originUrl('/customizations/global/pages/assets/json/config.json');
+			let xhConfigJson = new XMLHttpRequest;
+			xhConfigJson.overrideMimeType("application/json");
+			xhConfigJson.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					//console.log("Got config.json");
+					let adahCollectionData = document.getElementById('adah-meta-collection-data');
+
+					if ( adahCollectionData ) {
+						let jsonResponse = JSON.parse(this.responseText);
+						let specColls = jsonResponse["special-collections"];
+						
+						adahCollectionData.innerHTML = '';
+						if ( specColls ) {
+							for (let coll in specColls) {
+								if (specColls.hasOwnProperty(coll)) {
+									let tr = document.createElement('tr');
+									let th = document.createElement('th');
+									let textNode = document.createTextNode(coll);
 									
-									td.setAttribute('id', 'adah-meta-collection-data-' + coll + "-" + prop);
-									td.setAttribute('class', 'adah-meta-collection-data-' + prop);
+									th.appendChild(textNode);
+									tr.appendChild(th);
+									
+									for (let prop in specColls[coll]) {
+										let td = document.createElement('td');
+										let textNode = document.createTextNode(specColls[coll][prop]);
+										
+										td.setAttribute('id', 'adah-meta-collection-data-' + coll + "-" + prop);
+										td.setAttribute('class', 'adah-meta-collection-data-' + prop);
+										td.appendChild(textNode);
+										tr.appendChild(td);
+									}
+									
+									tr.setAttribute('id', 'adah-meta-collection-data-' + coll);
+
+									adahCollectionData.appendChild(tr);
+								}
+							}
+							
+							//const collection = e.detail.collectionId;
+							//if (typeof(collection) != 'undefined' && collection.length > 0 && collection.split("|").length == 1) {
+							//	console.log("STYLES: In a SINGLE COLLECTION");
+							//	let tag = null;
+							//	let tagEl = document.getElementById('adah-meta-collection-data-' + collection + '-tag');
+							//	if (tagEl) {
+							//		tag = tagEl.innerText;
+							//	}
+							//	if (tag == 'mosaic') {
+							//		console.log("STYLES: In a MOSAIC COLLECTION");
+							//		let loadedCustomCss = false;
+							//		let linkEls = document.getElementsByTagName('link');
+							//		for (let i = 0; i < linkEls.length; i++) {
+							//			if (linkEls[i].getAttribute('rel') == 'stylesheet') {
+							//				if (linkEls[i].getAttribute('data-collection-css') == 'true') {
+							//					console.log(collection, "LINKEM STYLES: ", linkEls[i], 'adah-meta-collection-data-' + collection + '-tag', tag);
+							//					loadedCustomCss = true;
+							//				}
+							//			}
+							//		} /* for */
+							//		
+							//		if (!loadedCustomCss) {
+							//			let customCssHref = '/customizations/collection/' + collection + '/' + collection + 'Styles.css';
+							//			console.log("STYLES: WE NEED TO LOAD ER UP:", customCssHref );
+							//			let elLink = document.createElement('link');
+							//			elLink.setAttribute('data-collection-css', 'true');
+							//			elLink.setAttribute('rel', 'stylesheet');
+							//			elLink.setAttribute('href', customCssHref);
+
+							//			let elRoot = document.getElementById('root');
+							//			elRoot.parentNode.insertBefore(elLink, elRoot);
+							//		} /* if */
+							//	}
+							//}
+						}
+					}
+				
+					adahCDMGetCollectionsList(e);
+				
+				} else if (this.readyState == 4 && this.status >= 400) {
+					// ...
+				}
+			};
+			xhConfigJson.open("GET", jsonurl, true);
+			xhConfigJson.send();			
+		});
+	}
+
+	function adahCDMGetCollectionsList(e) {
+		let adahCollectionData = document.getElementById('adah-collection-list');
+		if ( adahCollectionData ) {
+			adahCollectionData.innerHTML = '';
+		} else {
+			let bodyElements = document.getElementsByTagName('body');
+			for (i = 0; i<bodyElements.length; i++) {
+				var oTable = document.createElement('table');
+				
+				oTable = document.createElement('table');
+				bodyElements[i].appendChild(oTable);
+				oTable.setAttribute('id', 'adah-collection-list');
+				oTable.setAttribute('style', 'display: none');
+				
+			}
+		}
+
+		ScriptLoader('/customizations/global/pages/assets/js/cdm-api.js', function () {
+
+			let cdm = new cdmApi();
+			let jsonurl=cdm.originUrl("/digital/bl/dmwebservices/index.php?q=dmGetCollectionList/json");
+			let xhGetCollectionList = new XMLHttpRequest;
+			
+			xhGetCollectionList.overrideMimeType("application/json");
+			xhGetCollectionList.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+
+					let adahCollectionData = document.getElementById('adah-collection-list');
+					if ( adahCollectionData ) {
+
+						let jsonResponse = JSON.parse(this.responseText);
+						let colls = jsonResponse;
+						for (let i = 0; i < colls.length; i++) {
+							let coll = colls[i].alias.replace(/^[^A-Za-z0-9]+/, '');
+							
+							let tr = document.createElement('tr');
+							let th = document.createElement('th');
+							let textNode = document.createTextNode(coll);
+							
+							th.appendChild(textNode);
+							tr.appendChild(th);
+							
+							for (let prop in colls[i]) {
+								if (colls[i].hasOwnProperty(prop)) {
+									let td = document.createElement('td');
+									let textNode = document.createTextNode(colls[i][prop]);
+									
+									td.setAttribute('id', 'adah-collection-list-' + coll + "-" + prop);
+									td.setAttribute('class', 'adah-collection-list-' + prop);
 									td.appendChild(textNode);
 									tr.appendChild(td);
 								}
-								
-								tr.setAttribute('id', 'adah-meta-collection-data-' + coll);
-
-								adahCollectionData.appendChild(tr);
 							}
+							
+							tr.setAttribute('id', 'adah-collection-list-' + coll);
+
+							adahCollectionData.appendChild(tr);
+							
 						}
-						
-						//const collection = e.detail.collectionId;
-						//if (typeof(collection) != 'undefined' && collection.length > 0 && collection.split("|").length == 1) {
-						//	console.log("STYLES: In a SINGLE COLLECTION");
-						//	let tag = null;
-						//	let tagEl = document.getElementById('adah-meta-collection-data-' + collection + '-tag');
-						//	if (tagEl) {
-						//		tag = tagEl.innerText;
-						//	}
-						//	if (tag == 'mosaic') {
-						//		console.log("STYLES: In a MOSAIC COLLECTION");
-						//		let loadedCustomCss = false;
-						//		let linkEls = document.getElementsByTagName('link');
-						//		for (let i = 0; i < linkEls.length; i++) {
-						//			if (linkEls[i].getAttribute('rel') == 'stylesheet') {
-						//				if (linkEls[i].getAttribute('data-collection-css') == 'true') {
-						//					console.log(collection, "LINKEM STYLES: ", linkEls[i], 'adah-meta-collection-data-' + collection + '-tag', tag);
-						//					loadedCustomCss = true;
-						//				}
-						//			}
-						//		} /* for */
-						//		
-						//		if (!loadedCustomCss) {
-						//			let customCssHref = '/customizations/collection/' + collection + '/' + collection + 'Styles.css';
-						//			console.log("STYLES: WE NEED TO LOAD ER UP:", customCssHref );
-						//			let elLink = document.createElement('link');
-						//			elLink.setAttribute('data-collection-css', 'true');
-						//			elLink.setAttribute('rel', 'stylesheet');
-						//			elLink.setAttribute('href', customCssHref);
-
-						//			let elRoot = document.getElementById('root');
-						//			elRoot.parentNode.insertBefore(elLink, elRoot);
-						//		} /* if */
-						//	}
-						//}
 					}
+					
 				}
-				
-			} else if (this.readyState == 4 && this.status >= 400) {
-				// ...
 			}
-		}
-		xhttp.open("GET", jsonurl, true);
-		xhttp.send();			
+			xhGetCollectionList.open("GET", jsonurl, true);
+			xhGetCollectionList.send();
+			
+		});
+	}
+	
+	function adahCDMPageMenuLoader(e) {
 
+		adahCDMGetGlobalProperties(e);
+		
 		if (adahCDMPageMenu==null) {
 			let head = document.getElementsByClassName('Header-header');
 			let menu = document.getElementsByClassName('Header-headerMenuLinks', head);
@@ -424,7 +503,7 @@ var adahCDMPageMenu = null;
 			let jsonurl = '';
 			jsonurl = window.location.origin + '/customizations/collection/'+scope+'/pages/links.html';
 			
-			var xhttp = new XMLHttpRequest;
+			let xhttp = new XMLHttpRequest;
 			xhttp.onreadystatechange = function() {
 				if (this.readyState == 4 && this.status == 200) {
 					adahCDMPageMenu[this.responseURL] = this.responseText;
@@ -693,10 +772,8 @@ var adahCDMPageMenu = null;
 			console.log("Viewing a record: ", ref);
 		} /* if */
 		
-		// FIXME: IS THERE A WAY THAT WE CAN GRAB AHOLD OF $('#search-input') AND REWRITE HOW WE HANDLE IT?
-		
 		ScriptLoader('https://cdnjs.cloudflare.com/ajax/libs/tingle/0.13.2/tingle.js', function(){
-			console.log("link: ", document.getElementsByClassName("SimpleSearch-headerAdvancedSearchButtonLink")[0]);
+			//console.log("link: ", document.getElementsByClassName("SimpleSearch-headerAdvancedSearchButtonLink")[0]);
 			
 			var urlpath = urlstring.replace(/^.*?digital\//, '');
 			if (document.getElementsByClassName("advanced-modal").length > 0) { 
@@ -722,33 +799,73 @@ var adahCDMPageMenu = null;
 				advSearchContent.open();
 			});
 		});
+
+		ScriptLoader('/customizations/global/pages/assets/js/cdm-api.js', function(){
+
+			document.getElementById('search-input').addEventListener("keydown", function(e) {
+				if (e.keyCode == 13) {
+					let cdm = new cdmApi();
+					if (!cdm.debugging('simplesearch')) {
+						e.stopPropagation();
+						e.preventDefault();
+						
+						cdm.submitSimpleSearch(coll);
+					}
+				}
+			});
+			
+			document.getElementById('search-button').addEventListener("click", function(e) {
+				if (!cdm.debugging('simplesearch')) {
+					e.stopPropagation();
+					e.preventDefault();
+
+					cdm.submitSimpleSearch(coll);
+				}
+			});
+		
+		});
+		
 	}
 
 })();
 
+function ScriptLoader(url, callback){
+	console.log("ScriptLoader:", url, callback);
+	let tags = [].slice.call(document.getElementsByTagName('script')).filter(function (el) {
+		let include = false;
+		if (el.className.length > 0) {
+			let aClasses = el.className.split(/\s+/);
+			include = (aClasses.indexOf("scriptLoader") >= 0);
+		}
+		return include;
+	}).filter(el => (el.src == url));
+
+	if (tags.length == 0) {
+		var script = document.createElement("script");
+		script.type = "text/javascript";
+		script.className = "scriptLoader";
+		if (script.readyState){ //IE
+			script.onreadystatechange = function() {
+				if (script.readyState == "complete") {
+					script.onreadystatechange = null;
+					callback();
+				}
+			};
+		} else { //Others
+			//console.log("script.onload", callback);
+			script.onload = function(){
+				callback();
+			};
+		}
+		script.src = url;
+		document.getElementsByTagName("head")[0].appendChild(script);
+	}
+	else {
+		callback();
+	} /* if */
+}
+
 String.prototype.hasUrlParameter = function (name) {
 	var re = new RegExp('(^|/)(' + name + ')(/+([^/]+))?(/|$)');
 	return this.toString().match(re);
-}
-
-function ScriptLoader(url, callback){
-	console.log("ScriptLoader:", url, callback);
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    if (script.readyState){ //IE
-        script.onreadystatechange = function() {
-            if (script.readyState == "complete") {
-                script.onreadystatechange = null;
-                callback();
-            }
-        };
-    } else { //Others
-		console.log("script.onload", callback);
-        script.onload = function(){
-            callback();
-        };
-    }
-    script.src = url;
-	document.getElementsByTagName("head")[0].appendChild(script);
- 
-}
+};
