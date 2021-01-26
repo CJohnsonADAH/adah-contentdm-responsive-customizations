@@ -1,3 +1,11 @@
+/**
+ * adah-responsive-contentdm.js: here's a big pile of customizations for ADAH's CONTENTdm site
+ * some of them original, some of them pasted in or adapted from the OCLC Cookbook, and some
+ * adapted from the Ohio Memory CONTENTdm repository.
+ *
+ * @version 2021.0126
+ */
+ 
 /* video-stream-embed-1.2.js */
 
 (function() {
@@ -521,6 +529,16 @@ var adahCDMPageMenu = null;
 				
 				let head = document.getElementsByClassName('Header-header');
 				let menu = document.getElementsByClassName('Header-headerMenuLinks', head);
+				if (menu) {
+					for (var i = 0; i < menu.length; i++) {
+						if (menu[i].innerHTML != theHtml) {
+							menu[i].innerHTML = theHtml;
+						}
+					}
+				}
+				
+				let foot = document.getElementsByClassName('cdm-footer');
+				menu = document.getElementsByClassName('FooterNavigationLinks-footerLinksHolder', foot);
 				if (menu) {
 					for (var i = 0; i < menu.length; i++) {
 						if (menu[i].innerHTML != theHtml) {
