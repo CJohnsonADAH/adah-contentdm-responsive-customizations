@@ -135,3 +135,7 @@
 	.tingle-modal{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}}
 	.tingle-enabled .tingle-content-wrapper{-webkit-filter:none;filter:none}
 }
+
+.ItemView-itemNoFile {
+	display: none !important;
+}
