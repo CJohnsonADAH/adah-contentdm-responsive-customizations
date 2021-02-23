@@ -4,7 +4,7 @@
 <!-- Advanced Search Form for a Responsive ContentDM Site -->
 <!-- Derived from Ohio Memory Advanced Search Form, https://ohiomemory.org//customizations/global/pages/advancedsearch_resources/advanced_search.html -->
 <meta name="author" content="C. Johnson" />
-<meta name="version" content="2020.0902-1009" />
+<meta name="version" content="2021.0223-1301" />
 
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -428,13 +428,15 @@ advancedSearchForm.getCollectionsFromURL = function () {
 	let ssUrl = self.lastSearchURL();
 	let lastCollectionSelected = [];
 	
-	if (ref = ssUrl.hasUrlParameter('collection')) {
+	if ( ssUrl ) {
+		if (ref = ssUrl.hasUrlParameter('collection')) {
 
-		var collectionString = ref[4];
-		lastCollectionSelected = collectionString.split("!");
+			var collectionString = ref[4];
+			lastCollectionSelected = collectionString.split("!");
 
-		if (self.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
-		
+			if (self.debugging()) console.log("lastCollectionSelected:", lastCollectionSelected);
+			
+		}
 	}
 	
 	return lastCollectionSelected;
