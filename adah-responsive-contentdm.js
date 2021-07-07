@@ -509,7 +509,7 @@ var adahCDMPageMenu = null;
 		var scope=(typeof(e.detail.collectionId)=='undefined'?'*':e.detail.collectionId);
 		if (typeof(adahCDMPageMenu[scope])=='undefined') {
 			let jsonurl = '';
-			jsonurl = window.location.origin + '/customizations/collection/'+scope+'/pages/links.html';
+			jsonurl = [ window.location.origin, 'customizations', 'collection', scope, 'pages', 'links.html' ].join("/");
 			
 			let xhttp = new XMLHttpRequest;
 			xhttp.onreadystatechange = function() {
