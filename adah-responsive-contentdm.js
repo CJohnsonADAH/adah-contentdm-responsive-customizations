@@ -847,6 +847,32 @@ var adahCDMPageMenu = null;
 
 })();
 
+/* -=-=-=-= clickable-preview-pane.js =-=-=-=-*/
+
+(function () {
+	'use strict';
+	
+	document.addEventListener('cdm-item-page:ready', function(e) {
+		console.log("*** Adding preview click event.");
+		let panes = document.getElementsByClassName("preview");
+		for (let i = 0; i < panes.length; i++) {
+			let el = panes[i];
+			let btns = el.getElementsByClassName("ItemImage-expandButton");
+			if (btns.length == 0) {
+				let btns = el.getElementsByClassName("ItemPDF-expandButton");
+			}
+			if (btns.length > 0) {
+				el.addEventListener("click", function(e){
+					e.preventDefault();
+					for (let j = 0; j < btns.length; j++) {
+						btns[j].click();
+					}
+				});
+			}
+		}
+	});
+})();
+
 /* -=-=-=-= button-pdf-print-1.0.js =-=-=-=- */
 
 (function() {
