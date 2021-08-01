@@ -3,8 +3,10 @@
  * some of them original, some of them pasted in or adapted from the OCLC Cookbook, and some
  * adapted from the Ohio Memory CONTENTdm repository.
  *
- * @version 2021.0223-1442
+ * @version 2021.0723
  */
+
+console.log("adah-responsive-contentdm.js", "2021.0723-0917");
  
 /* video-stream-embed-1.2.js */
 
@@ -853,7 +855,7 @@ var adahCDMPageMenu = null;
 	'use strict';
 	
 	document.addEventListener('cdm-item-page:ready', function(e) {
-		console.log("*** Adding preview click event.");
+		console.log("clickable-preview-pane.js", "Adding preview click event.");
 		let panes = document.getElementsByClassName("preview");
 		for (let i = 0; i < panes.length; i++) {
 			let el = panes[i];
@@ -875,9 +877,10 @@ var adahCDMPageMenu = null;
 
 /* -=-=-=-= button-pdf-print-1.0.js =-=-=-=- */
 
-(function() {
+let button_pdf_print = (function() {
     'use strict';
-
+    console.log("button-pdf-print", "2021.0723", "modified - only on non-PDF");
+    
     // helper function to extract archival download link of current item
     function buildPDFDownloadLink(collection, item) {
       return fetch('/digital/api/collections/' + collection + '/items/' + item + '/false')
@@ -887,12 +890,18 @@ var adahCDMPageMenu = null;
         })
         .then(function(json) {
           // if print PDF exists get download URL
-          console.log('has print pdf: ' + json.hasPrintPDF);
-
-          if (json.hasPrintPDF == true) {
-            let printLink = json.downloadParentUri;
-            console.log('parent uri: ' + json.downloadParentUri);
-            return printLink;
+          console.log("button-pdf-print", "print PDF:", json.hasPrintPDF, "contentType:", json.contentType);
+          if (json.hasPrintPDF) {
+            if (json.contentType != "application/pdf") {
+              let printLink = json.downloadParentUri;
+              console.log("button-pdf-print", 'preview uses parent uri:', json.downloadParentUri);
+              return printLink;
+            }
+            else {
+              console.log("button-pdf-print", "preview uses own, NOT parent URI", json.contentType);
+              let printLink = false;
+              return printLink;
+            }
           } else {
             let printLink = false;
             return printLink;
@@ -964,6 +973,7 @@ var adahCDMPageMenu = null;
 
   document.addEventListener('cdm-item-page:ready', function(e) {
     let collection = e.detail.collectionId;
+    console.log("button-pdf-print-1.0.js", "cdm-item-page:ready", "insertPrintPDFDownload");
     if (globalScope || collectionScope.includes(collection)) {
       insertPrintPDFDownload(collection, e.detail.itemId);
     }
@@ -971,6 +981,7 @@ var adahCDMPageMenu = null;
 
   document.addEventListener('cdm-item-page:update', function(e) {
     let collection = e.detail.collectionId;
+    console.log("button-pdf-print-1.0.js", "cdm-item-page:update", "downloadPDFButton.remove(); insertPrintPDFDownload");
     if (globalScope || collectionScope.includes(collection)) {
       downloadPDFButton.remove();
       insertPrintPDFDownload(collection, e.detail.itemId);
@@ -979,12 +990,15 @@ var adahCDMPageMenu = null;
 
   document.addEventListener('cdm-item-page:leave', function(e) {
     let collection = e.detail.collectionId;
+    console.log("button-pdf-print-1.0.js", "cdm-item-page:leave", "downloadPDFButton.remove()");
     if (globalScope || collectionScope.includes(collection)) {
       downloadPDFButton.remove();
     }
   });
 
-})();
+});
+
+button_pdf_print();
 
 /* version history
 
@@ -994,7 +1008,7 @@ var adahCDMPageMenu = null;
 
 /* -=-=-=-= pdf-objects-multipage-1_1.js =-=-=-=- */
 
-(function() {
+let pdf_objects_multipage = (function() {
   'use strict';
 
   function getFullPDFLink(collection, item) {
@@ -1134,7 +1148,9 @@ var adahCDMPageMenu = null;
     }
   });
 
-})();
+});
+
+//pdf_objects_multipage();
 
 /* version history
 
